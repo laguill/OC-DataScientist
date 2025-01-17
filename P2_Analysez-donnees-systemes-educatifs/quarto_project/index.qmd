@@ -1,0 +1,1358 @@
+---
+title: Projet 2 - Analyse-systemes-educatifs
+subtitle: Analyse des données éducatives mondiales issues de la Banque mondiale (EdStats All Indicator Query)
+authors:
+  - name: Guillaume LAFON
+    affiliation: OpenClassrooms
+    email: guillaumelafon13@gmail.com
+keywords:
+  - EdStats
+  - OpenClassrooms
+  - academy
+abstract: |
+  **But de la mission** : déterminer si les données sur l’éducation de la banque mondiale peut informer les décisions d'ouverture vers de nouveaux pays
+
+  **Détails de la mission** :
+
+  1. Quels sont les pays avec un fort potentiel de clients pour nos services ?
+  2. Pour chacun de ces pays, quelle sera l’évolution de ce potentiel de clients ?
+  3. Dans quels pays l'entreprise doit-elle opérer en priorité ?
+
+  Les données de la Banque mondiale sont disponibles à l’adresse suivante : <https://datacatalog.worldbank.org/dataset/education-statistics>.
+  L’organisme “EdStats All Indicator Query” de la Banque mondiale répertorie 4000 indicateurs internationaux décrivant l’accès à l’éducation, l’obtention de diplômes et des informations relatives aux professeurs, aux dépenses liées à l’éducation...
+  Plus d'info sur ce site : <http://datatopics.worldbank.org/education/>.
+plain-language-summary: |
+  Les données éducatives mondiales issues de la Banque mondiale (EdStats All Indicator Query) ont été explorées pour soutenir le projet d’expansion internationale de la start-up Academy. Cette analyse vise à identifier les zones géographiques présentant un fort potentiel éducatif et économique pour orienter les décisions stratégiques de l’entreprise.
+key-points:
+  - 'Les indicateurs éducatifs révèlent des disparités significatives entre les pays, offrant des perspectives stratégiques pour prioriser certaines régions dans le cadre de l’expansion internationale.'
+date: last-modified
+number-sections: true
+lang: fr
+---
+
+## Introduction
+
+### Contexte
+
+Academy, start-up EdTech, propose des formations en ligne pour des publics de niveau lycée et université. Dans le cadre d’une expansion internationale, l’entreprise explore les opportunités sur de nouveaux marchés grâce à des données globales sur l’éducation issues de la Banque mondiale (EdStats All Indicator Query), qui regroupent plus de 4000 indicateurs relatifs à l’accès à l’éducation, les dépenses, et les résultats académiques.
+
+### Objectif
+
+Cette analyse exploratoire a pour but de :
+
+1.  Évaluer la qualité et la pertinence des données pour le projet d’expansion.
+    1.  Valider la qualité du jeu de données (valeurs manquantes ? doublons ?)
+    2.  Pour chaque fichiers décrire leurs contenus
+    3.  Bilan de l'analyse
+2.  Dégager des indicateurs clés pour orienter les futures décisions d’investissement.
+    1.  Quelle tranche de population ?
+    2.  Quelles années conserver ?
+3.  Identifier des zones géographiques stratégiques présentant un fort potentiel éducatif et économique.
+    1.  Filtrer les données
+    2.  Définir une liste de pays
+4.  Présenter les résultats
+    1.  Calculer des indicateurs
+    2.  Analyse graphique
+
+## Préparation de l'environnement et importation des données
+
+### Préparation de l'environnement et importation des librairies
+J'utilise Pixi pour gérer les librairies et leurs versions.
+Le fichier `pyproject.toml` contient les librairies utilisées et leurs versions.
+Pour créer un environnement virtuel avec Pixi, il faut créer un dossier pour le projet, copier le fichier `pyproject.toml` dans ce dossier, puis l'initialiser avec la commande `pixi init`.
+
+```{python}
+# Run to list and update librairies
+# # list des librairies utilisées et leurs versions
+# !pixi list --explicit
+# # vérifie que les librairies sont à jour
+# !pixi update
+```
+
+```{python}
+from pathlib import Path
+
+import pandas as pd
+
+from IPython.display import Markdown
+from itables import show
+import itables.options as opt
+import missingno as msno
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.ticker as mticker
+import geopandas as gpd
+import numpy as np
+
+figsize = plt.rcParams["figure.figsize"]
+
+# Afficher écriture scientifique des valeurs numériques
+pd.set_option("display.float_format", "{:g}".format)
+
+
+opt.scrollY = "200px"
+opt.scrollCollapse = True
+opt.paging = False
+opt.column_filters = "header"
+
+```
+
+### Chargement des fichiers csv
+
+```{python}
+dataset_folder = Path("data/Dataset_Edstats_csv/")
+csv_files = list(dataset_folder.glob("*.csv"))
+print(f"Fichiers CSV trouvés : {[file.name for file in csv_files]}")
+```
+```{python}
+#| code-fold: true
+#| output: false
+dfs = {file.stem: pd.read_csv(file) for file in csv_files}
+```
+
+### Première lecture et description des fichiers csv
+#### Aperçu des fichiers
+Présentation du contenu des fichiers répartis par onglets (50 premières lignes)
+
+::: {.panel-tabset}
+
+```{python}
+#| code-fold: true
+#| output: asis
+for name, df in dfs.items():
+    display(Markdown(f"## {name}"))
+    show(df.head(50))
+```
+
+:::
+
+#### Conversion des types des colonnes utilisés pour chaque fichiers
+
+Conversion des types pour chaque dataframe. Permet d'optimiser les ressources et réduire la zone mémoire utilisée.
+
+```{python}
+def convert_columns_types(df_data: pd.DataFrame) -> pd.DataFrame:
+    df_data = df_data.convert_dtypes()
+    fcols = df_data.select_dtypes("float").columns
+    icols = df_data.select_dtypes("integer").columns
+
+    df_data[fcols] = df_data[fcols].apply(pd.to_numeric, downcast="float")
+    df_data[icols] = df_data[icols].apply(pd.to_numeric, downcast="integer")
+    return df_data
+```
+
+```{python}
+cols = ["Country Name", "Country Code","Indicator Name", "Indicator Code"]
+dfs["EdStatsData"][cols] = dfs["EdStatsData"][cols].astype("category")
+```
+
+Affichage des types de données de chaque dataframe par colonnes.
+
+::: {.panel-tabset}
+
+```{python}
+#| output: asis
+for name, df in dfs.items():
+    display(Markdown(f"## {name}"))
+    df = convert_columns_types(df)
+    dfs[name] = df
+    show(df.dtypes)
+```
+
+:::
+
+### Affiche les infos détaillées de chaque dataframes et présente les données dans un tableau
+
+```{python}
+# Liste pour stocker les informations de chaque dataframe
+summary_data = []
+for name, df in dfs.items():
+    summary_data.append({
+        "Fichier": name,
+        "Dimensions": df.shape,
+        "Noms colonnes": df.columns.to_list(),
+        "Types de données": df.dtypes.to_dict(),
+    })
+
+# Création d'un DataFrame pour afficher ces informations
+summary_df = pd.DataFrame(summary_data)
+
+# Affichage du tableau
+show(summary_df)
+```
+
+### Résumé du contenu des 5 fichiers csv
+
+::: {.callout-note}
+-   **EdStatsCountry-Series**, **EdStatsSeries**, **EdStatsFootNotes** contiennent des données relatives à la source des données.\
+    Pour le moment ces fichiers ne sont pas pertinent pour mon analyse. Je pourrais y revenir si j'ai besoin de précisions.
+:::
+
+-   **EdStatsCountry** contient des informations sur la géolocalisation des pays (dans quelle partie du monde ils se situent), informations sur la date du recensement de la population et la monnaie utilisée.\
+    ➡️ Je vais conserver les colonne `["Country Code", "Short Name", "Currency Unit", "Region"]` Ces colonnes peuvent m'être utile pour grouper mes données
+
+-   **EdStatsData** est le fichier le plus pertinent pour mon analyse.
+
+    -   Collecte des données par rapport à 3665 critères de 242 pays.
+    -   Les données sont répertoriés par année de 1970 à 2100.
+
+↪️ Pour la suite je vais maintenant analyser le fichier **EdStatsData**
+
+-   Je commence par analyser la colonne `Country Code` car il me semble qu'il y a trop de pays.
+
+-   Puis les indicateurs pour mon analyse (colonne `Indicator Name`).
+
+-   Enfin je conserverai uniquement les colonnes des années qui contiennent le moins de données manquantes.
+
+## Analyse du fichier `EdStatsData`
+Chargement du fichier `EdStatsData` et description du contenu de ses colonnes.
+```{python}
+edStatsData = dfs["EdStatsData"]
+show(edStatsData.describe(), "Description des données de EdStatsData")
+```
+
+### Visualisation des valeurs manquantes par colonne
+
+```{python}
+# Affichage graphique des valeurs manquantes
+msno.bar(
+    edStatsData,
+    figsize=figsize,
+    fontsize=6,
+)
+plt.title("Valeurs manquantes dans EdStatsData")
+```
+
+On peut voir avec le graphique ci dessus qu'il y a beaucoup de valeurs manquantes. Voyons voir maintenant leurs répartitions:
+
+```{python}
+show(edStatsData.isnull().mean() *100,"Répartition des valeurs manquantes dans EdStatsData")
+```
+
+```{python}
+# Créer un DataFrame à partir du nombre de valeurs manquantes par colonne
+mean_missing_data = edStatsData.isnull().mean() * 100
+mean_missing_data = pd.DataFrame(mean_missing_data, columns=["Pourcentage_manquant"])
+
+# Ajouter la colonne Acceptable
+mean_missing_data["Manquants < 90%"] = mean_missing_data["Pourcentage_manquant"] < 90
+
+# Réinitialiser l'index pour avoir une meilleure visualisation
+mean_missing_data = mean_missing_data.reset_index()
+mean_missing_data.columns = ["Colonne", "Pourcentage_manquant", "Manquants < 90%"]
+
+```
+
+```{python}
+g = sns.barplot(
+    x="Pourcentage_manquant",
+    y="Colonne",
+    data=mean_missing_data,
+    orient="h",
+    hue="Manquants < 90%",
+    palette="pastel",
+)
+
+# Ajoute une ligne verticale à 90%
+g.axvline(x=90, color="red", linestyle="--", linewidth=1)
+
+plt.yticks(fontsize=6)
+# change scale of x axis to show 90%
+plt.xticks([i for i in range(0, 101, 10)])
+plt.ylabel("Nom des colonnes")
+plt.xlabel("Taux de valeurs manquantes")
+
+
+g.set_title("Répartition des valeurs manquantes dans EdStatsData")
+#g.figure.savefig("images/manquants.png")
+```
+
+#### Suppression des colonnes non représentatives
+
+Je décide de conserver uniquement les colonnes où moins de 90 % des données sont manquantes. Les données après 2015 présentent un nombre de valeurs manquantes significatif. 
+Pour la suite de mon analyse, je vais me concentrer sur les colonnes contenant des données valides entre 2010 et 2015.
+
+```{python}
+# Suppression des années non représentatives
+columns_to_drop = [str(year) for year in range(1970, 1999)]
+columns_to_drop.extend(["2016", "2017"])
+columns_to_drop.extend([str(year) for year in range(2020, 2101, 5)])
+
+edStatsData_filtered = edStatsData.drop(columns=columns_to_drop)
+show(edStatsData_filtered["Indicator Name"].drop_duplicates())
+```
+
+```{python}
+# Affiche valeurs non manquantes par colonnes
+msno.bar(
+    edStatsData_filtered,
+    figsize=figsize,
+    fontsize=6,
+)
+plt.title("Valeurs non manquantes dans EdStatsData")
+```
+
+#### Supprime toutes les lignes sans valeurs
+
+On commence par vérifier s'il y a des lignes sans aucune valeurs
+
+```{python}
+# Sélectionner toutes les colonnes sauf les 3 premières qui contiennent Country Names, Country Codes et indicateurs
+columns_to_check = edStatsData_filtered.loc[:, "2000":"2015"]
+
+# Cherche les lignes sans manquants
+empty_rows_mask = columns_to_check.isna().all(axis=1)
+# Afficher le nombre de lignes à supprimer, c'est-à-dire celles qui ont toutes les valeurs manquantes dans les colonnes de 2000 à 2015
+num_empty_rows = edStatsData_filtered[empty_rows_mask].shape[0]
+display(Markdown(f"Nombre de lignes vides à supprimer: **{num_empty_rows}**"))
+```
+
+```{python}
+# Supprimer ces lignes du DataFrame en utilisant le masque créée précédemment
+display(Markdown(f"Nombre de lignes **avant** suppression des lignes vides: **{edStatsData_filtered.shape[0]}**"))
+
+edStatsData_filtered = edStatsData_filtered.dropna(axis=0, how="all", subset=columns_to_check.columns)
+
+display(Markdown(f"Nombre de lignes **après** suppression des lignes vides: **{edStatsData_filtered.shape[0]}**"))
+```
+
+```{python}
+# Affiche les lignes vides
+msno.matrix(edStatsData_filtered)
+plt.title("Matrice des lignes vides dans edStatsData_filtered")
+#plt.savefig("images/lignes_vides.png")
+```
+
+J'ai supprimé un grand nombre de lignes mais comme on peut le voir sur le graphique ci-dessus, il reste encore beaucoup de lignes vides.
+J'arrête ici la suppression des lignes vides pour ne pas supprimer trop de données.
+
+### Analyse de la colonne `Country Code`
+
+Maintenant, je vérifie que les codes pays sont valides.
+
+```{python}
+# Charge données alpha-3
+ISO_3166 = pd.read_csv(
+    "https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/refs/heads/master/all/all.csv",
+    usecols=["name", "alpha-3"],
+)
+```
+
+```{python}
+Markdown(f"La liste officielle qui répertorie les codes pays du monde contient **{ISO_3166["alpha-3"].nunique()}** codes")
+```
+
+```{python}
+nb_country_code = edStatsData_filtered["Country Code"].nunique()
+Markdown(f"EdStatsData contient **{nb_country_code}** codes de pays")
+```
+
+On conserve uniquement les codes présent dans la liste alpha-3 de ISO_3166.
+
+```{python}
+# Créer un masque pour identifier les pays valides selon ISO_3166
+valid_countries = edStatsData_filtered["Country Code"].isin(ISO_3166["alpha-3"])
+```
+
+```{python}
+# Identifier et afficher les pays supprimés
+removed_countries = edStatsData_filtered[~valid_countries]
+removed_countries_list = pd.Series(removed_countries["Country Name"].unique(), name="Country Name")
+show(removed_countries_list, "Liste des 'Pays' supprimés")
+```
+
+```{python}
+# Filtrer les données pour conserver uniquement les pays valides
+edStatsData_filtered = edStatsData_filtered[valid_countries]
+show(edStatsData_filtered)
+```
+
+```{python}
+Markdown(f"Nombres de pays après filtrage d'après la liste alpha-3: **{edStatsData_filtered['Country Name'].nunique()}**")
+```
+
+### Analyse des indicateurs présents dans la colonne `Indicator Name`
+#### Bilan du filtre précédent
+Comparaison des indicateurs avant et après filtrage précédent.
+
+```{python}
+# Nombre total d'indicateurs avant filtrage
+total_indicators_before_filter = edStatsData["Indicator Name"].nunique()
+Markdown(f" Nombre indicateurs avant filtre années et filtre lignes vides: **{total_indicators_before_filter}**")
+```
+
+```{python}
+# Liste des noms d'indicateurs après filtrage
+filtered_indicators = edStatsData_filtered["Indicator Name"].drop_duplicates()
+
+display(Markdown(f"Nombre d'indicateurs disponibles après filtrage: **{filtered_indicators.nunique()}**"))
+```
+
+```{python}
+# Calcul et affichage du nombre d'indicateurs supprimés
+removed_indicators_count = total_indicators_before_filter - filtered_indicators.nunique()
+display(Markdown(f"Le premier filtrage a supprimé : **{removed_indicators_count}** indicateurs"))
+```
+
+```{python}
+show(filtered_indicators, "EdStatsData après suppression des lignes vides")
+```
+
+Petit bilan sur le jeu de données avant de poursuivre:
+
+```{python}
+display(Markdown("Nom du jeu de données: **edStatsData_filtered**"))
+display(Markdown(f"Doublons: **{edStatsData_filtered.duplicated().sum()}**"))
+display(Markdown(f"Pays: **{edStatsData_filtered['Country Name'].nunique()}**"))
+display(Markdown(f"Nb indicateurs: **{edStatsData_filtered['Indicator Name'].nunique()}**"))
+```
+
+#### Ajout des descriptions des indicateurs
+Pour avoir plus d'informations sur les indicateurs, j'importe leurs descriptions présentes dans le fichier `EdStatSeries`
+
+```{python}
+# Ajoute la description des indicateurs grâce aux informations de edStatsSeries
+edStatsSeries = dfs["EdStatsSeries"][["Series Code", "Topic", "Short definition", "Long definition"]]
+
+edStatsData_filtered = edStatsData_filtered.merge(
+    right=edStatsSeries,
+    left_on="Indicator Code",
+    right_on="Series Code",
+    how="left",
+)
+
+# Supprimer la colonne Series Code
+edStatsData_filtered = edStatsData_filtered.drop(columns="Series Code")
+
+show(edStatsData_filtered.head(50))
+```
+
+#### Indicateurs représentatifs
+
+Maintenant je veux savoir si les indicateurs sont représentatifs.\
+Pour cela j'utilise un tableau croisée dynamique:
+
+-  Pour afficher une ligne par indicateur
+
+-  Pour chaque années entre 2000 et 2015 ➡️ compte le nombre de valeurs non nul
+
+::: {.callout-note}
+
+Un indicateur est représentatif lorsqu'il est disponible pour chaque pays.\
+Dans mon cas comme je considère 215 pays, je dois avoir $n=215$ observations par indicateur par année.\
+Un indicateur est représentatif si il est disponible pour au moins 50% des pays.
+:::
+
+```{python}
+# Récupérer les noms des colonnes des années et le nombre de pays
+years_columns = [str(year) for year in range(2000, 2016)]
+nb_country = edStatsData_filtered["Country Name"].nunique()
+```
+
+```{python}
+# Pivot table pour compter les valeurs non nulles par indicateur
+indicator_usage_counts = edStatsData_filtered.pivot_table(
+    values=years_columns,
+    index=["Indicator Name", "Topic"],
+    aggfunc="count",
+    observed=True,
+)
+```
+
+```{python}
+msno.matrix(indicator_usage_counts.replace(0, np.nan))
+plt.title("Utilisation des indicateurs par pays et par année")
+```
+
+```{python}
+# Calcul de la valeur moyenne par indicateur au fil des ans
+indicator_usage_counts["Moyenne"] = indicator_usage_counts.mean(axis=1, skipna=True)
+
+# Trie par ordre décroissant Frequence de données
+indicator_usage_counts["Frequence"] = indicator_usage_counts["Moyenne"] / nb_country
+indicator_usage_counts = indicator_usage_counts.sort_values(
+    by="Frequence",
+    ascending=False,
+)
+
+# Afficher les résultats avec la moyenne
+show(
+    indicator_usage_counts[["Moyenne", "Frequence"]],
+    "Distribution des données : moyenne et taux de valeurs manquantes par indicateur",
+)
+
+```
+
+```{python}
+#Je conserve les indicateurs qui ont un taux de valeurs manquantes de moins de 50%
+MIN_FREQUENCY_THRESHOLD = 0.5
+filtered_indicators = indicator_usage_counts.query(f"`Frequence` >{MIN_FREQUENCY_THRESHOLD}")
+show(filtered_indicators[["Moyenne", "Frequence"]], f"Indicateurs avec une fréquence >= {MIN_FREQUENCY_THRESHOLD}")
+```
+
+```{python}
+Markdown(f"Il reste **{filtered_indicators.index.nunique()}** indicateurs")
+```
+
+J'ai supprimé beaucoup d'indicateurs. Avant de faire un bilan, je reconstruis le jeu de données.
+
+```{python}
+# Récupère la liste unique des indicateurs valides
+valid_indicators = filtered_indicators.index.unique("Indicator Name")
+
+# Filtre le DataFrame pour ne garder que les lignes avec des indicateurs valides
+edStatsData_filtered = edStatsData_filtered[
+    edStatsData_filtered["Indicator Name"].isin(valid_indicators)
+]
+```
+
+**Bilan:**
+
+```{python}
+display(Markdown("Nom du jeu de données: **edStatsData_filtered**"))
+display(Markdown(f"Doublons: **{edStatsData_filtered.duplicated().sum()}**"))
+display(Markdown(f"Pays: **{edStatsData_filtered['Country Name'].nunique()}**"))
+display(Markdown(f"Nb indicateurs: **{edStatsData_filtered['Indicator Name'].nunique()}** "))
+```
+
+::: {.callout-note}
+**Note**
+
+J'ai supprimé plus de 3000 indicateurs. \
+J'ai peux désormais sélectionner les indicateurs qui me semblent les plus intéressants.
+:::
+
+### Choix des indicateurs
+
+Quels sont les thèmes des indicateurs ? Est ce qu'il y en a qui ne correspondent pas à mon étude ?
+
+```{python}
+show(edStatsData_filtered["Topic"].drop_duplicates(),"Thèmes des indicateurs")
+```
+
+Le thème des indicateurs ne me permet pas de filtrer les colonnes des indicateurs.\
+Je regarde plus en détaille les indicateurs et leurs définitions.
+
+```{python}
+show(edStatsData_filtered[["Indicator Name", "Long definition"]].drop_duplicates())
+```
+
+#### Niveaux d'éducations
+
+Je décide de supprimer les indicateurs qui mesurent des informations sur les cycles scolaires avant le lycée.\
+Sauf si les formations proposées par l'entreprise sera du soutien scolaire, les niveaux d'études inférieurs me semblent pas pertinents.
+
+```{python}
+# Définition des niveaux d'éducation à exclure
+UNWANTED_INDICATORS = ["pre-primary", "primary", "lower secondary"]
+
+# Création du pattern regex pour la recherche
+# Le | agit comme un "OU" en regex, permettant de chercher n'importe lequel des termes
+pattern = "|".join(UNWANTED_INDICATORS)
+
+# Filtrage du DataFrame pour exclure les indicateurs contenant ces termes
+# Le ~ inverse la condition (garde les lignes qui ne contiennent PAS ces mots)
+# case=False rend la recherche insensible à la casse
+# na=False traite les valeurs manquantes comme False plutôt que de les propager
+edStatsData_filtered = edStatsData_filtered[
+    ~edStatsData_filtered["Indicator Name"].str.contains(
+        pattern,
+        case=False,
+        na=False,
+    )
+]
+```
+
+**Bilan**
+```{python}
+display(Markdown("Nom du jeu de données: **edStatsData_filtered**"))
+display(Markdown(f"Doublons: **{edStatsData_filtered.duplicated().sum()}**"))
+display(Markdown(f"Pays: **{edStatsData_filtered['Country Name'].nunique()}**"))
+display(Markdown(f"Nb indicateurs: **{edStatsData_filtered['Indicator Name'].nunique()}** "))
+```
+
+L'opération m'a permis de supprimer plus de 100 d'indicateurs.
+
+#### Suppression des catégories par genre:
+Pour étude est préliminaire, J'analyse globalement la population pour évaluer des potentiels clients.
+Je supprime les indicateurs qui représentent une partie de la population qui contiennent `female` ou `male`.
+
+```{python}
+# Définition des termes à exclure (indicateurs de genre et de segmentation de population)
+POPULATION_FILTERS = [
+    "female",
+    "male",
+]
+
+# Création du pattern de recherche
+filter_pattern = "|".join(POPULATION_FILTERS)
+
+# Création d'un nouveau DataFrame excluant les indicateurs spécifiques à certaines populations
+edStatsData_filtered = edStatsData_filtered[
+    ~edStatsData_filtered["Indicator Name"].str.contains(
+        filter_pattern,
+        case=False,
+        na=False,
+    )
+]
+```
+
+**Bilan**
+
+```{python}
+display(Markdown("Nom du jeu de données: **edStatsData_filtered**"))
+display(Markdown(f"Doublons: **{edStatsData_filtered.duplicated().sum()}**"))
+display(Markdown(f"Pays: **{edStatsData_filtered['Country Name'].nunique()}**"))
+display(Markdown(f"Nb indicateurs: **{edStatsData_filtered['Indicator Name'].nunique()}** "))
+```
+
+Maintenant que j'ai supprimé la plupart des indicateurs peu pertinents pour mon étude préliminaire, je sélectionne les indicateurs qui me semblent les plus intéressants.
+
+### Selection des indicateurs:
+
+Je sélectionne 6 indicateurs qui couvrent des dimensions essentielles tel que:
+
+-   Etudes académiques :
+    -   `Enrolment in upper secondary education, both sexes (number)`
+-   Répartition de la population :
+    -   `Population, ages 15-64 (% of total)`
+    -   `Population, total`
+-   Accès à la technologie :
+    -   `Internet users (per 100 people)`
+-   Capacité financière des pays :
+    -   `GNI per capita, PPP (current international $)`
+-   Investissement public dans l'éducation :
+    -   `Government expenditure on education as % of GDP (%)`
+
+
+```{python}
+# Définition des termes à exclure (indicateurs de genre et de segmentation de population)
+INCLUDED_INDICATORS = [
+    # Etudes académiques
+    "Enrolment in upper secondary education, both sexes (number)",
+    # Répartition de la population
+    "Population, ages 15-64 (% of total)",
+    "Population, total",
+    # Accès technologique
+    "Internet users (per 100 people)",
+    # Capacité financière des habitants
+    "GNI per capita, PPP (current international $)",
+    # Investissement public dans l'éducation
+    "Government expenditure on education as % of GDP (%)",
+]
+```
+
+Pour limiter les erreurs dûes à mes filtres précédents, je recharge mon jeu de données.
+Je vais concentrer mes analyses sur les années 2010 et 2015.
+
+```{python}
+edStatsData= dfs["EdStatsData"]
+# Fusion des données avec les régions
+edStatsCountry = dfs["EdStatsCountry"]
+
+edStatsData_final = edStatsData.merge(
+    edStatsCountry[["Country Code", "Region"]],
+    on="Country Code",
+    how="left",
+)
+
+edStatsData_final = edStatsData_final.query(f"`Country Code` in {ISO_3166['alpha-3'].to_list()}")
+```
+
+```{python}
+# Suppression des années non représentatives
+columns_to_drop = [str(year) for year in range(1970, 2010)]
+columns_to_drop.extend(["2016", "2017"])
+columns_to_drop.extend([str(year) for year in range(2020, 2101, 5)])
+
+edStatsData_final = edStatsData_final.drop(columns=columns_to_drop)
+
+```
+
+```{python}
+# Création d'un nouveau DataFrame excluant les indicateurs spécifiques à certaines populations
+edStatsData_final = edStatsData_final.query(f"`Indicator Name` in {INCLUDED_INDICATORS}").copy()
+```
+
+**Bilan**
+
+```{python}
+display(Markdown("Nom du jeu de données: **edStatsData_final**"))
+display(Markdown(f"Doublons: **{edStatsData_final.duplicated().sum()}**"))
+display(Markdown(f"Pays: **{edStatsData_final['Country Name'].nunique()}**"))
+display(Markdown(f"Nb indicateurs: **{edStatsData_final['Indicator Name'].nunique()}** "))
+```
+
+J'ai extrait **6** indicateurs pour **215 pays** dans mon jeu de données.\
+Je vais créer un scoring basé sur ces indicateurs.\
+Pour cela, j'ai besoin d'établir un classement pour chacun de mes indicateurs par pays et par an.
+
+
+## Jeu de données final
+Pour sélectionner les pays, j'ai besoin d'analyser la valeurs des indicateurs par pays par année. Actuellement j'ai les années entre 2000 et 2015.  \
+L'échelle de temps est trop importante.
+Je vais étudier les années 2010 et 2015.
+En cas de de valeurs manquantes je conserve la dernière valeur connue.
+
+```{python}
+# J'utilise la méthode ffill pour remplacer les valeurs manquantes par la dernière valeur connue à partir de 2010
+
+years_2010_2015 = [str(year) for year in range(2010, 2016)]
+
+edStatsData_final["Last_Value"] = edStatsData_final[years_2010_2015].ffill(axis=1)["2015"]
+
+show(edStatsData_final)
+```
+
+Maintenant que j'ai la dernière valeur connue pour chaque indicateur, Je créer un nouveau dataframe avec les indicateurs et les pays.
+
+```{python}
+columns_to_keep = ["Country Name", "Region", "Indicator Name", "Last_Value"]
+edStatsData_final_Pivot = edStatsData_final[columns_to_keep].pivot_table(
+    index=["Country Name", "Region"],
+    columns="Indicator Name",
+    values="Last_Value",
+    observed=True,
+)
+edStatsData_final_Pivot = edStatsData_final_Pivot.reset_index()
+
+show(edStatsData_final_Pivot, "Valeurs des indicateurs par pays")
+```
+
+## Pré-Analyse des indicateurs
+Je commence par vérifier s'il y a des valeurs manquantes
+
+```{python}
+# Je crée un graphique pour visualiser les valeurs manquantes
+msno.matrix(
+    edStatsData_final_Pivot,
+    filter="top",
+    sort="descending",
+    figsize=(12, 10),
+    color=(0.49, 0.69, 0.90),
+)
+plt.title(
+    "Valeurs manquantes par pays avant filtrage",
+    fontsize=16,
+)
+
+plt.show()
+```
+
+Je supprime les pays qui ont des valeurs manquantes dans la liste des indicateurs.
+
+```{python}
+# Filtrer le noms des pays avec suffisamment de données non manquantes
+valid_countries = edStatsData_final_Pivot.dropna(thresh=4)["Country Name"].to_list()
+
+# J'obtient la liste des pays à supprimer
+countries_to_remove = edStatsData_final_Pivot.query(f"`Country Name` not in {valid_countries}")["Country Name"]
+
+show(
+    countries_to_remove,
+    "Pays qui ont des valeurs manquantes dans la liste des indicateurs",
+)
+```
+
+```{python}
+edStatsData_final_Pivot = edStatsData_final_Pivot.query(f"`Country Name` not in {countries_to_remove.to_list()}")
+edStatsData_final_Pivot = edStatsData_final_Pivot.reset_index()
+``` 
+
+```{python}
+msno.matrix(
+    edStatsData_final_Pivot,
+    filter="top",
+    sort="descending",
+    figsize=(12, 10),
+    color=(0.49, 0.69, 0.90),
+)
+plt.title("Valeurs manquantes par pays après filtrage", fontsize=16)
+plt.show()
+```
+
+### Analyse de la répartition empirique des différentes variables
+```{python}
+# Représentation des histogrammes pour chacune des variables.
+nrows = len(INCLUDED_INDICATORS) // 2
+ncols = 2
+fig, axes = plt.subplots(nrows, ncols, figsize=(20, 20))
+
+sns.set(font_scale=1.25)
+for indicator in INCLUDED_INDICATORS:
+    i = INCLUDED_INDICATORS.index(indicator)
+    sns.histplot(
+        ax=axes[i // ncols, i % ncols],
+        data=edStatsData_final_Pivot,
+        x=indicator,
+    )
+
+fig.suptitle("Répartition empirique des indicateurs", fontsize=25)
+plt.show()
+#fig.savefig("images/distribution_indicateurs.png")
+```
+
+Certains indicateurs ont des écarts d'échelle très grands
+Je vais utiliser une transformation logarithmique pour les rendre plus lisible.
+Il s'agit de : `Enrolment in upper secondary education, both sexes (number)`, `Population, total`, `GNI per capita, PPP (current international $)`.
+
+```{python}
+INDICATORS_TO_LOG = [
+    "Enrolment in upper secondary education, both sexes (number)",
+    "Population, total",
+    "GNI per capita, PPP (current international $)",
+]
+
+# Transformation des données en log (naturel, népérien) pour s'approcher d'une distribution suivant une loi normal.
+for indicator in INDICATORS_TO_LOG:
+    edStatsData_final_Pivot[f"log_{indicator}"] = np.log(edStatsData_final_Pivot[indicator])
+
+# Suppression des indicateurs d'origine
+edStatsData_final_Pivot = edStatsData_final_Pivot.drop(columns=INDICATORS_TO_LOG)
+
+show(edStatsData_final_Pivot, "Valeurs des indicateurs après transformation logarithmique")
+```
+
+Dans la liste des indicateurs, je remplace les indicateurs par leurs équivalents transformés logarithmiques.
+
+```{python}
+INCLUDED_INDICATORS_WITH_LOG = [
+    # Etudes académiques
+    "log_Enrolment in upper secondary education, both sexes (number)",
+    # Répartition de la population
+    "Population, ages 15-64 (% of total)",
+    "log_Population, total",
+    # Accès technologique
+    "Internet users (per 100 people)",
+    # Capacité financière des habitants
+    "log_GNI per capita, PPP (current international $)",
+    # Investissement public dans l'éducation
+    "Government expenditure on education as % of GDP (%)",
+]
+```
+
+Je retrace les graphiques de répartition empirique des indicateurs.
+
+```{python}
+# Représentation des histogrammes pour chacune des variables.
+fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 20))
+
+sns.set(font_scale=1.25)
+for indicator in INCLUDED_INDICATORS_WITH_LOG:
+    i = INCLUDED_INDICATORS_WITH_LOG.index(indicator)
+    sns.histplot(
+        ax=axes[i // ncols, i % ncols],
+        data=edStatsData_final_Pivot,
+        x=indicator,
+    )
+
+fig.suptitle("Répartition empirique des indicateurs", fontsize=25)
+plt.show()
+#fig.savefig("images/distribution_indicateurs_log.png")
+```
+
+Tous les indicateurs suivent une loi normale. Je peux maintenant analyser la relation entre les indicateurs.
+
+### Analyse de la relation entre les indicateurs
+Par pair d'indicateurs je vais tracer des nuages de points.
+L'apparition de lignes diagonales dans les nuages de points indique la possibilités d'une corrélation entre les indicateurs.
+Une fonction pratique est pairplot de la librairie seaborn.
+
+```{python}
+# Analyse de la relation entre les indicateurs
+g = sns.pairplot(
+    data=edStatsData_final_Pivot,
+    vars=INCLUDED_INDICATORS_WITH_LOG,
+    corner=True,
+    kind="reg",
+    plot_kws={"line_kws": {"color": "red"}},
+)
+g.fig.suptitle("Analyse de la relation entre les indicateurs", fontsize=25)
+
+for ax in g.axes.flatten():
+    if ax:
+        # rotate x axis labels
+        ax.set_xlabel(ax.get_xlabel(), rotation=45)
+        # rotate y axis labels
+        ax.set_ylabel(ax.get_ylabel(), rotation=0)
+        # set y labels alignment
+        ax.yaxis.get_label().set_horizontalalignment("right")
+        # set x labels alignment
+        ax.xaxis.get_label().set_horizontalalignment("right")
+plt.show()
+#g.savefig("images/pairplot_indicateurs.png")
+```
+
+D'après le graphique ci-dessus, une corrélation semble exister entre les pairs d'indicateurs suivants:
+
+- `log_Enrolment in upper secondary education, both sexes (number)` et `log_Population, total`
+
+- `Internet users (per 100 people)` et `log_GNI per capita, PPP (current international $)`
+
+Je vérifie mon hypothèse avec une matrice de corrélation de Pearson.
+
+```{python}
+# Calcul de la matrice de corrélation
+correlation_matrix = edStatsData_final_Pivot[INCLUDED_INDICATORS_WITH_LOG].corr()
+
+# Mask du triangle supérieur de la matrice
+mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+
+# Affichage de la matrice de corrélation
+heat_map = sns.heatmap(
+    correlation_matrix,
+    annot=True,
+    fmt=".2f",
+    mask=mask,
+    cmap="vlag",
+    vmin=-1,
+    vmax=1,
+    linewidths=0.5,
+    cbar_kws={"shrink": 0.5},
+)
+
+# Rotation des labels des axes
+heat_map.set_xticklabels(
+    heat_map.get_xticklabels(),
+    rotation=45,
+    horizontalalignment="right",
+)
+heat_map.set(
+    xlabel=None,
+    ylabel=None,
+)
+
+# Titre et dimensions de la figure
+heat_map.set_title(
+    "Matrice de corrélation entre les indicateurs",
+    fontsize=30,
+)
+plt.figure(figsize=(15, 15))
+
+plt.show()
+```
+
+La matrice de corrélation confirme mon hypothèse, les pairs d'indicateurs suivants sont corrélés:
+
+- `log_Enrolment in upper secondary education, both sexes (number)` et `log_Population, total`
+
+- `Internet users (per 100 people)` et `log_GNI per capita, PPP (current international $)`
+
+Leurs coefficients de corrélation sont respectivement de **0.97** et **0.90**. Soit très proche de 1.
+Cela signifie que :
+
+- plus la population est importante, plus le nombre d'étudiants est important.
+
+- plus l'investissement dans l'éducation est important, plus l'accès à l'internet est important.
+
+Rien de surprenant, je vais définir mon scoring en fonction de ces indicateurs. Plus hautes sont les valeurs, plus le pays est intéressant.
+
+### Analyse de la répartition des valeurs par indicateurs
+Avant de définir mon scoring, je vais m'assurer que je n'ai pas de valeurs aberrantes en affichant les boxplots de chaque indicateur.
+
+```{python}
+# Affichage des grandeurs statistiques par indicateurs
+show(edStatsData_final_Pivot.describe())
+```
+
+
+```{python}
+# Affichage des boxplots de chaque indicateur
+ncols = len(INCLUDED_INDICATORS_WITH_LOG) // 2
+nrows = 2
+fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 20))
+fig.suptitle(
+    "Répartition des valeurs par indicateurs",
+    fontsize=25,
+    y=1.01,
+)
+
+
+subplots = {}
+# pour chaque graphe indicateurs
+for indicator in INCLUDED_INDICATORS_WITH_LOG:
+    i = INCLUDED_INDICATORS_WITH_LOG.index(indicator)
+    n_ax = ax[i // ncols, i % ncols]
+    subplot = sns.violinplot(
+        ax=n_ax,
+        data=edStatsData_final_Pivot,
+        orient="y",
+        y=indicator,
+        fill=False,
+        inner_kws=dict(box_width=25, whis_width=2, color="blue"),
+    )
+    subplot.set_xlabel(None)
+    subplot.set_title(indicator, fontsize=20)
+    subplot.set_ylabel(None)
+    subplot.yaxis.set_tick_params()
+    # Save each subplot in a dictionary
+    subplots[indicator] = subplot
+
+
+# Pour chaque indicateur, je définis la valeur limite pour filtrer les valeurs
+INCLUDED_INDICATORS_QUANTILE = {
+    "Internet users (per 100 people)": 0.5,
+    "Government expenditure on education as % of GDP (%)": None,
+    "log_Enrolment in upper secondary education, both sexes (number)": 0.25,
+    "log_GNI per capita, PPP (current international $)": 0.25,
+    "log_Population, total": 0.25,
+    "Population, ages 15-64 (% of total)": 0.25,
+}
+# Pour chaque graphique j'ajoute une ligne rouge
+for indicator, quantile in INCLUDED_INDICATORS_QUANTILE.items():
+    if quantile is not None:
+        subplots[indicator].axhline(
+            y=edStatsData_final_Pivot[indicator].quantile(quantile),
+            color="red",
+            linestyle="--",
+            label=f"Quantile {quantile}",
+        )
+
+fig.tight_layout()
+plt.show()
+#fig.savefig("images/boxplots_indicateurs.png")
+```
+
+Le graphique ci-dessus permet de visualiser les modes de distribution des indicateurs ainsi que les répartitions interquartiles.
+voici le filtre que je vais appliquer:
+
+- `Internet users (per 100 people)`: critère de sélection le plus important, je conserve les valeurs supérieures à la médiane.
+
+- `Government expenditure on education as % of GDP (%)`: Je conserve toutes les valeurs car elles assez sont rapprochées.
+
+- Pour les autres indicateurs, je conserve les valeurs supérieures au premier quartile.
+
+```{python}
+
+# Créer les conditions avec des masques booléens
+CONDITIONS = []
+# Pour chaque indicateur, je conserve les valeurs supérieures au quantile défini
+# Pour cela je concatene les conditions avec query
+for indicator, quantile in INCLUDED_INDICATORS_QUANTILE.items():
+    escaped_indicator = f"`{indicator}`"
+
+    if quantile is not None:
+        Q_value = edStatsData_final_Pivot[indicator].quantile(quantile)
+        CONDITIONS.append(f"{escaped_indicator} > {Q_value}")
+    else:
+        # Pour Government expenditure on education as % of GDP (%) je conserver toutes les valeurs
+        Q_value = 0
+        CONDITIONS.append(f"{escaped_indicator} > {Q_value}")
+
+CONDITIONS = " & ".join(CONDITIONS)
+
+```
+
+```{python}
+# Appliquer toutes les conditions
+
+edStatsData_final_Pivot = edStatsData_final_Pivot.query(CONDITIONS)
+```
+
+```{python}
+show(edStatsData_final_Pivot, "Jeu de données filtré")
+Markdown(f"Après filtrage du jeu de données, il reste: **{edStatsData_final_Pivot['Country Name'].nunique()}** pays")
+```
+
+### Création d'un indice de scoring
+
+```{python}
+from sklearn.preprocessing import MinMaxScaler
+
+# Initialisation du scaler pour normaliser les données entre 0 et 1
+normalizer = MinMaxScaler()
+
+# Préparation des données pour la normalisation
+data_to_normalize = edStatsData_final_Pivot.drop(columns=["Country Name", "Region"])
+column_names = data_to_normalize.columns
+
+# Application de la normalisation
+normalized_values = normalizer.fit_transform(data_to_normalize)
+
+# Création du DataFrame avec les valeurs normalisées
+normalized_indicators = pd.DataFrame(
+    normalized_values,
+    index=edStatsData_final_Pivot.index,
+    columns=column_names,
+)
+
+# Ajout de la colonne des noms de pays et de la colonne des régions
+normalized_indicators["Country Name"] = edStatsData_final_Pivot["Country Name"]
+normalized_indicators["Region"] = edStatsData_final_Pivot["Region"]
+
+# Calcul du score global (moyenne des indicateurs)
+
+normalized_indicators["Global_Score"] = normalized_indicators[column_names].mean(axis=1)
+
+# Affichage des 5 meilleurs pays selon le score global
+show(normalized_indicators.sort_values("Global_Score", ascending=False).head(5), "Top 5 des pays selon le score global")
+```
+
+
+## Affichage graphique
+
+Je souhaite afficher les régions qui ont le plus de pays à fort potentiel.
+
+Je commence par visualiser la répartition par région par indicateur.
+
+```{python}
+# Afficher les boxplots par région par indicateur
+fig, ax = plt.subplots(
+    nrows=nrows,
+    ncols=ncols,
+    figsize=(30, 15),
+    sharex=False,
+    sharey="row",
+)
+plt.suptitle(
+    "Répartition par région par indicateur",
+    fontsize=25,
+    y=1.01,
+)
+
+for indicator in INCLUDED_INDICATORS_WITH_LOG:
+    i = INCLUDED_INDICATORS_WITH_LOG.index(indicator)
+    n_ax = ax[i // ncols, i % ncols]
+    subplot = sns.boxplot(
+        ax=n_ax,
+        data=normalized_indicators,
+        x=indicator,
+        y="Region",
+        orient="h",
+    )
+    subplot.set_xlabel(None)
+    subplot.set_ylabel(None)
+    subplot.set_title(indicator, fontsize=20)
+    subplot.yaxis.set_tick_params()
+
+fig.tight_layout()
+plt.show()
+#fig.savefig("images/boxplots_indicateurs_par_region.png")
+```
+
+Le box plot correspond à une seule valeur.
+Il n'y a qu'un seul pays dans la région "Sub-Saharan Africa" pour certains indicateurs. 
+
+
+```{python}
+# Afficher les régions qui ont le plus de pays à fort potentiel
+region_scores = normalized_indicators.groupby("Region")["Global_Score"].agg(["mean", "count"]).reset_index()
+
+region_scores = region_scores.sort_values("count", ascending=False)
+
+# Créer le graphique à barres
+bars = region_scores.plot(
+    kind="bar",
+    y="count",
+    x="Region",
+    figsize=(12, 6),
+    xlabel="Région",
+    ylabel="Nombre de pays",
+    title="Nombre de pays par région",
+    color="#7eb0d5",
+)
+
+# Ajouter le nombre de pays par région au-dessus de chaque barre
+for i, bar in enumerate(region_scores["count"]):
+    plt.text(i, bar, f"{int(bar)}", ha="center", va="bottom")
+
+plt.xticks(rotation=45, ha="right")
+
+plt.show()
+```
+
+```{python}
+# Afficher les régions qui ont le plus de pays à fort potentiel
+region_scores = normalized_indicators.groupby("Region")["Global_Score"].agg(["mean", "count"]).reset_index()
+
+region_scores = region_scores.sort_values("mean", ascending=False)
+
+# Créer le graphique à barres
+bars = region_scores.plot(
+    kind="bar",
+    y="mean",
+    x="Region",
+    figsize=(12, 6),
+    xlabel="Région",
+    ylabel="Score moyen",
+    title="Score moyen par région",
+    color="#7eb0d5",
+)
+
+# Ajouter le nombre de pays par région au-dessus de chaque barre
+for i, bar in enumerate(region_scores["mean"]):
+    plt.text(i, bar, f"{bar:.2f}", ha="center", va="bottom")
+
+plt.xticks(rotation=45, ha="right")
+
+plt.show()
+```
+
+Les pays d’Europe centrale et Orientale ont le plus de pays à fort potentiel.
+
+```{python}
+# Enregistre les 5 pays les plus performants dans un dataframe
+top_5 = normalized_indicators.reset_index().nlargest(5, "Global_Score")
+
+top_5["Country Name"] = top_5["Country Name"].cat.remove_unused_categories()
+
+# Je vais utiliser un graphique en barres
+top_5.plot(
+    kind="bar",
+    y="Global_Score",
+    x="Country Name",
+    figsize=(12, 6),
+    xlabel="Pays",
+    ylabel="Score global",
+    title="Top 5 des pays selon le score global",
+    color="#7eb0d5",
+)
+
+plt.xticks(rotation=45, ha="right")
+# add values on top of the bars
+for i, v in enumerate(top_5["Global_Score"]):
+    plt.text(i, v, f"{v:.2f}", ha="center", va="bottom")
+plt.show()
+
+```
+
+```{python}
+show(top_5, "Top 5 des pays selon le score global")
+```
+
+Pour chacun des 5 pays, j'affiche le score obtenu pour chaque indicateur.
+
+```{python}
+from textwrap import wrap
+
+# Créer un DataFrame au format long pour faciliter le plotting
+top_5_long = top_5.melt(
+    id_vars=["Country Name"],
+    value_vars=INCLUDED_INDICATORS_WITH_LOG,  # Utiliser uniquement les indicateurs
+    var_name="Indicator",
+    value_name="Score",
+)
+
+for indicator in top_5_long["Indicator"].unique():
+    top_5_long.loc[top_5_long["Indicator"] == indicator, "Indicator"] = "\n".join(wrap(indicator, 40))
+
+
+g = sns.FacetGrid(
+    top_5_long,
+    col="Country Name",
+    height=3.5,
+    aspect=1,
+    col_wrap=3,
+    margin_titles=True,
+    hue="Indicator",
+    palette="Set2",
+)
+g.map(sns.barplot, "Score", "Indicator")
+g.set_titles(col_template="{col_name}")
+g.fig.suptitle("Score par indicateur du top 5 des pays", fontsize=20)
+g.tight_layout()
+plt.show()
+# g.savefig("top_5_pays_par_indicateur.png")
+```
+
+### Visualisation de la carte du monde avec la position des top 5 pays
+
+Je vais maintenant afficher une carte des pays les plus interessants pour l'entreprise.
+
+```{python}
+from matplotlib import colors
+MAP_URL = "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip"
+
+world = gpd.read_file(MAP_URL)
+world = world[(world.ADMIN != "Antarctica")]
+
+# Add a new column to set to true if the country is in the top 20
+world["is_top_5"] = world["NAME"].isin(top_5["Country Name"])
+
+# Créer une seule figure
+fig, ax = plt.subplots(figsize=(12, 6))
+
+colors_dict = {
+    False: "whitesmoke",
+    True: "blue",
+}
+cmap = colors.ListedColormap([t[1] for t in sorted(colors_dict.items())])
+
+
+# Plot tous les pays en une seule fois
+world.plot(
+    ax=ax,
+    column="is_top_5",
+    cmap=cmap,
+    linewidth=0.6,
+    edgecolor="0.8",
+    legend=True,
+    legend_kwds={"loc": "lower left", "title": "Légende", "labels": ["Autres pays", "Top 5"]},
+)
+
+
+# Ajouter le titre
+ax.set_title("Top 5 des pays correspondants au mieux à nos critères")
+ax.set_axis_off()
+
+plt.show()
+```
+
+```{python}
+MAP_URL = "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip"
+
+world = gpd.read_file(MAP_URL)
+world = world[(world.ADMIN != "Antarctica")]
+
+# Add a new column to set to true if the country is in the top 20
+world["is_top_5"] = world["NAME"].isin(top_5["Country Name"])
+
+# Créer une carte interactive avec explore
+world.explore(
+    column="is_top_5",
+    cmap=cmap,
+    edgecolor="0.8",
+    # Ajouter un popup qui affiche le nom du pays
+    popup=["NAME"],
+    tooltip=["NAME"],
+    # Ajouter un titre à la carte
+    title="Top 5 des pays correspondants au mieux à nos critères en 2015",
+    k=2,
+    legend=True,
+    legend_kwds={"colorbar": False, "caption": "Légende", "labels": ["Autres pays", "Top 5"]},
+)
+
+```
+
+### Conclusion
+Le jeu de données m'a permis d'identifier 5 pays qui correspondent au mieux à nos critères.
+- `United States` 
+- `United Kingdom` 
+- `Korea, Rep.` 
+- `Sweden` 
+- `Norway` 
+
+En revanche je n'ai pas données suffisantes pour établir une liste potentielle pour 2024.
+
+
+### Sauvegarde final du jeu de données
+
+```{python}
+# Define the save folder path
+SAVE_FOLDER = Path("data/Save") 
+
+# Ensure the folder exists
+SAVE_FOLDER.mkdir(parents=True, exist_ok=True)
+```
+
+```{python}
+# Sauvegarde du jeu de données filtré
+SAVE_FOLDER = Path("data/Save")
+edStatsData_final_Pivot.to_parquet(
+    SAVE_FOLDER / "edStatsData_final.parquet",
+    compression="zstd",
+    compression_level=10,
+    index=False,
+)
+```
+
