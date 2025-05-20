@@ -1,0 +1,40 @@
+```{python}
+# | label : saved-cols
+
+col_geo = [
+    "CouncilDistrictCode",
+    "Neighborhood",
+    "Latitude",
+    "Longitude",
+]
+col_archi = [
+    "YearBuilt",
+    "NumberofBuildings",
+    "NumberofFloors",
+    "PropertyGFATotal",
+    "PropertyGFABuilding(s)",
+    "PropertyGFAParking",
+    "OSEBuildingID",
+]
+
+col_usage = [
+    "PrimaryPropertyType",
+    "BuildingType",
+]
+
+col_conso = [
+    "SiteEnergyUseWN(kBtu)",
+    "TotalGHGEmissions",
+    "SteamUse(kBtu)",
+    "Electricity(kBtu)",
+    "NaturalGas(kBtu)",
+]
+
+col_commentaires = [
+    "DefaultData",
+    "Comments",
+    "ComplianceStatus",
+    "Outlier",
+]
+col_conservees = col_geo + col_archi + col_usage + col_conso + col_commentaires
+```

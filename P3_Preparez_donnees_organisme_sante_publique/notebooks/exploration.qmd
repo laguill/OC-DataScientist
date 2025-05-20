@@ -1,0 +1,326 @@
+---
+title: "Exploration du jeu de données"
+---
+
+## Première lecture du jeu de données
+### Téléchargement des données
+
+- Le lien du fichier csv est disponible [ici](https://s3-eu-west-1.amazonaws.com/static.oc-static.com/prod/courses/files/parcours-data-scientist/P2/fr.openfoodfacts.org.products.csv.zip)
+
+- Le fichier csv est assez volumineux (**808Mio**).
+
+- Open Food Fact fournit une documentation pour traiter les données [How-to-reuse?](https://wiki.openfoodfacts.org/Reusing_Open_Food_Facts_Data#How_to_reuse.3F)
+
+- Ainsi, je sais que les colonnes sont séparées par des tab ("`\t`") et non des virgules.
+
+### Initialisation et importation des librairies
+
+```{python}
+#|echo: true
+{{< include code_snippets/_import-packages.py >}}
+
+```
+
+### Importation du jeu de données
+
+Pour une première visualisation je charge qu'une partie du fichier.
+
+```{python}
+data_lite = pd.read_csv(csv_file, sep="\t", low_memory=False, nrows=10_000)
+```
+
+## Structure et contenu du jeu de données
+
+### Exploration
+
+D'abord j'affiche 20 ligne aléatoires du fichier.
+
+```{python}
+show(data_lite.sample(20), f"Extrait du contenu du fichier {csv_file.stem}")
+```
+
+Cet échantillon nous donne plusieurs indications:
+
+- Il y a pas mal de valeurs manquantes
+- Des colonnes sont en anglais et traduites en français
+- Des colonnes contiennent plusieurs états dans une seule cellule
+
+J'affiche les dimensions du fichier.
+
+```{python}
+# | output: asis
+Markdown(tools.df_shape(data_lite))
+```
+
+Le nom des colonnes et leurs types
+
+```{python}
+show(data_lite.dtypes, "Types du contenu des colonnes")
+```
+
+Le type des champs de date/heures et les champs de texte sont mal définis.
+
+Il y a plusieurs de données:
+
+- Informations générales (codebar, date de création, nom, marque, ... )
+
+- Qualité du produit (nutriscore)
+
+- Composition du produit (additifs, ingrédients, nutriments)
+
+### Colonnes catégories
+
+Avant de filtrer les données, je vais analyser les colonnes de catégories et voir ce qu'elle contiennent.
+J'affiche un échantillon sans valeurs manquantes.
+
+```{python}
+categories_col = [
+    "main_category",
+    "main_category_fr",
+    "pnns_groups_1",
+    "pnns_groups_2",
+    "categories",
+    "categories_tags",
+    "categories_fr",
+]
+categories_df = data_lite[categories_col].copy()
+
+analysis_df = categories_df[categories_df.notna().all(axis=1)]
+show(analysis_df, "Analyse des valeurs des colonnes categories")
+```
+
+Je constate 3 points:
+
+- Des manquants sont nommés `unknown`
+
+- Les colonnes avec `_fr` sont des traductions
+
+- `categories_tags` et `catégories_fr` contiennent plusieurs de valeurs par cellule
+
+Je commence par remplacer les valeurs unknown par des nan
+et conserve que les colonnes `main_category_fr`, `pnns_groups_1`,`pnns_groups_2`.
+
+```{python}
+data_lite = data_lite.replace("unknown", np.nan)
+categories_col = [
+    "main_category_fr",
+    "pnns_groups_1",
+    "pnns_groups_2",
+]
+
+categories_df = data_lite[categories_col].copy()
+
+analysis_df = categories_df[categories_df.notna().all(axis=1)]
+show(analysis_df, "Analyse des valeurs des colonnes categories")
+
+```
+
+Pour chaque produit, je pense qu'il est plus facile d'avoir des catégories assez générique pour faciliter le remplissage d'informations par l'utilisateur de l'application.
+Il se trouve que rapport de l'ANSI a été publié en 2012 sur les groupes et sous groupes d'aliments.
+Il correspondent au catégories `pnns_groups_1` et `pnns_groups_2`
+[Rapport ANSI 2012](https://www.anses.fr/fr/system/files/NUT2012SA0103Ra-1.pdf#page=42)
+
+`pnns_groups_1` et `pnns_groups_2` sont les colonnes de catégories que je vais conserver.
+
+:::: {.callout-important}
+
+A noter que les valeurs actuelles sont en anglais.
+Il faudra penser à les traduire dans l'application
+
+:::
+
+### Pays d'origine {#sec-country-filter}
+
+L'application concerne les produits français.
+Donc qui sont vendu en France.
+
+D'après la liste des champs de la base de données disponible à cette adresse ([data-filed.txt](https://world.openfoodfacts.org/data/data-fields.txt)), la colonne du champ `countries` contient la liste des pays dans lequel un produit est vendu.
+
+Je vais conserver uniquement les aliments qui sont répertoriés comme vendus en France (commence par `fr`).
+
+```{python}
+# |lst-label: lst-countries-filter
+# |lst-cap: Countries filter
+# |code-fold: true
+
+countries_col = data_lite["countries"]
+
+# Définir les conditions de filtrage
+contains_fr = countries_col.str.contains("fr", case=False, na=False)
+
+# Combine les conditions
+filtre_pays = contains_fr
+
+data_lite = data_lite[filtre_pays] 
+
+```
+
+```{python}
+# | output: asis
+Markdown(tools.df_shape(data_lite))
+
+```
+
+### Doublons {#sec-doublons}
+
+La colonne `code` contient le code bar des produits. C'est un identifiant unique, il va me permettre d'identifier les doublons.
+
+```{python}
+# | lst-label: lst-doublons-filter
+# | lst-cap: Duplicated filter
+nb_doublons = data_lite.shape[0] - data_lite["code"].nunique()
+Markdown(f"Il y a **{nb_doublons}** produits en doublons.")
+```
+
+:::: {.callout-note}
+Il faudra que je définisse une stratégie en cas de doublons.
+:::
+
+### Nutri-Score
+
+Concernant les colonnes concernant la composition des produits, je pense qu'il est est intéressant de ne conserver que celles prises en compte dans le calcul du nutriscore.
+Cela permet de simplifier l'information pour l'utilisateur final et de se concentrer sur les éléments les plus pertinents pour l'évaluation nutritionnelle des produits.
+
+La composition des aliments utilisée pour calculer le Nutri-Score est détaillée dans un document de l'Agence Santé Publique France intitulé [Nutri Score Questions Réponses](https://www.santepubliquefrance.fr/media/files/02-determinants-de-sante/nutrition-et-activite-physique/nutri-score/faq_fr).
+
+Pour 100 grammes de produit, les critères pris en compte sont les suivants :
+
+- La valeur énergétique (en kilojoules, KJ)
+
+- Les lipides (en grammes, g)
+
+- Les acides gras saturés (en grammes, g)
+
+- Les sucres + edulcorants depuis 2025 (en grammes, g)
+
+- Les protéines (en grammes, g)
+
+- Le sodium (en milligrammes, mg)
+
+- Les fibres (en grammes, g)
+
+Je filtre les colonnes pour conserver celles concernant des nutriments pour 100g.
+
+```{python}
+# Liste des colonnes dont le nom se termine par "100g"
+col_100g = [col for col in data_lite.columns if col.endswith("100g")]
+
+show(pd.DataFrame(col_100g), "Liste des colonnes dont le nom se termine par 100g ")
+```
+
+Conformément au calcul du nutriscore je conserve ces colonnes: `energy_100g`, `saturated-fat_100g`, `fat_100g`, `fiber_100g`, `fruits-vegetables-nuts_100g`,
+`glucose_100g`, `proteins_100g`, `sodium_100g`, `sucrose_100g`, `sugars_100g`, `trans-fat_100g`
+
+Il y également plusieurs colonnes qui contiennent le nutriscore je vais les comparer pour voir laquelle conserver:
+
+```{python}
+nutri_col = [col for col in data_lite.columns if "nutrition" in col]
+show(pd.DataFrame(nutri_col),"Liste des colonnnes contenant des informations sur le nutriscore")
+```
+
+Je vais comparer le contenu des 2 colonnes contant `fr` et vérifier si elles sont identiques.
+
+```{python}
+nutri_col = [col for col in nutri_col if "fr" in col]
+show(data_lite[nutri_col].nunique(), "Nombre de valeurs unique par colonne")
+```
+
+Les 2 colonnes ne sont pas identiques.\n
+Je compare leurs contenus.
+
+:::{panel-tabset}
+
+```{python}
+for col in nutri_col:
+    display(Markdown(f"#### {col}"))
+    show(data_lite[col].unique(), f"Valeurs unique de la colonne {col}")
+
+```
+
+:::
+
+La colonne `nutrition_grade_fr` contient les 5 lettre de notation alors que `nutrition-score-fr_100g` contient des nombres.\
+Je vais donc conserver `nutrition_grade_fr`. 
+
+### Informations générales
+
+Il y a plusieurs colonnes qui contiennent des informations descriptives des produits: 
+`code`, `created_datetime`, `created_t`, `creator`, `generic_name`,`product_name`, `image_small_url`,`image_url`, `last_modified_datetime`, `last_modified_t`, `brands`
+
+Je visualise leurs contenues pour vérifier s'il y a des colonnes en doublons ou qui contiennent des informations similaires.
+
+::: {.panel-tabset}
+
+```{python}
+# | code-fold: true
+col_generales = [
+    "code",
+    "created_datetime",
+    "created_t",
+    "creator",
+    "generic_name",
+    "product_name",
+    "image_small_url",
+    "image_url",
+    "last_modified_datetime",
+    "last_modified_t",
+    "brands",
+]
+
+for col in col_generales:
+    display(Markdown(f"##### {col}"))
+    show(data_lite[col].head(10), f"Contenue de la colonne: {col}")
+```
+
+:::
+
+- Les colonnes `_datetime` et `_t` contiennent respectivement la date/heure et l'heure.\ 
+C'est un doublon, je vais conserver que `_datetime`
+
+- Pour les images elles sont soient en grand format ou petit format. \
+Pour l'application je conserve que le petit format.
+
+- `generic name` et `creator` ne me semblent pas pertinents
+
+- `brands` me semble intéressant à conserver pour plus de détail sur le produit.
+
+En résumé, pour caractéristiques générales produits je conserve:
+`code`, `created_datetime`, `product_name`, `image_small_url`, `last_modified_datetime`, `brands`
+
+### Informations supplémentaires
+
+J'ai également repéré des colonnes qui peuvent contenir des informations intéressantes comme `labels` pour l'appellation biologique et `origine` pour l'appellation origine France.
+
+::: {.callout-note}
+
+Ce sont des labels soumis à des critères strictes. Ces champs d'informations peuvent être intéressant pour l'utilisateur mais je ne pense pas que ce soit à lui de saisir l'information.
+L'information serait alors difficile à vérifier.
+
+:::
+
+### Bilan sur la sélection des colonnes 
+
+Mon exploration des données m'a permis d'identifier des colonnes à conserver ainsi que des filtres à appliquer.
+
+1. Colonnes à conserver:
+
+- **Identifiants de produits:** `code`, `created_datetime`, `product_name`, `image_small_url`, `last_modified_datetime`, `brands`
+
+- **Catégories de classification:** `countries`, `pnns_groups_1`,   `pnns_groups_2`, `nutrition_grade_fr`
+
+- **Nutriments:** `energy_100g`,`saturated-fat_100g`, `fat_100g`,`fiber_100g`, `fruits-vegetables-nuts_100g`, `glucose_100g`,   `proteins_100g`, `sodium_100g`, `sucrose_100g`, `sugars_100g`,   `trans-fat_100g`,
+
+2. Filtres à appliquer
+
+- **Produits vendus en France:** @lst-countries-filter
+
+- **Doublons de produits:** @lst-doublons-filter
+
+::: {.callout-note}
+
+J'enregistre les colonnes à conserver dans une liste avant de charger mon fichier de données au complet.
+
+{{< include code_snippets/_saved-cols.qmd >}}
+
+:::
+
