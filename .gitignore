@@ -184,19 +184,11 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# marimo
+__marimo__/
+
 # data folder
-**data/raw/**
-!**data/raw/
-
-**/data/raw/Images/
-**/data/raw/Images_train/
-**/data/raw/Images_test/
-
-**/models/**
-!**/models/
-
-**/__marimo__/cache/**
-!**/__marimo__/
+data/
 
 # zip
 *.zip

@@ -1,0 +1,827 @@
+---
+title: Nettoyage des données
+---
+
+```{python}
+#|echo: false
+{{< include code_snippets/_import-packages.py >}}
+
+```
+
+::: callout-note
+**Pour rappel:** Voici la liste des colonnes enregistrées
+
+{{< include code_snippets/_saved-cols.qmd >}}
+:::
+
+## Nettoyage
+
+Maintenant que j'ai définis les colonnes à analyser, je charge le fichier de données au complet.
+
+```{python}
+data = pd.read_csv(csv_file, sep="\t", usecols=col_conservees, low_memory=False)
+Markdown(tools.df_shape(data))
+```
+
+### Conserve uniquement les produits vendu en France
+
+Voir section @sec-country-filter
+
+Je commence par afficher les pays dans la colonne `countries`
+
+```{python}
+show(data["countries"].unique(), "Liste des pays de vente des produits")
+```
+
+```{python}
+countries_col = data["countries"]
+
+# Définir les conditions de filtrage
+contains_fr = countries_col.str.contains("fr", case=False, na=False)
+
+# Combine les conditions
+filtre_pays = contains_fr
+
+# Nb lignes qui vont être supprimées
+tools.compte_diff_lignes(len(data), filtre_pays.sum())
+```
+
+Le filtre va supprimer plus de **200 000** produits.
+
+```{python}
+data = data[filtre_pays]
+```
+
+### Types de colonnes date
+
+Pour organiser mon jeu de données, j'ordonne le jeu convertie les colonnes `created_datetime` et `last_modified_datetime`.
+
+```{python}
+# Liste des colonnes de date
+date_columns = ["created_datetime", "last_modified_datetime"]
+
+# Format de date
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+# Appliquer la conversion à toutes les colonnes de date
+data[date_columns] = data[date_columns].apply(pd.to_datetime, errors="coerce", format=DATE_FORMAT, utc=True)
+```
+
+Je peux ainsi trier les produits en plaçant le dernier produit saisis en premier.
+
+```{python}
+data = data.sort_values(by="last_modified_datetime", ascending=False)
+```
+
+### Doublons
+
+Voir section @sec-doublons
+
+Je vérifie s'il y a des doublons de produit en utilisant la colonne `code`
+
+```{python}
+nb_doublons = data["code"].duplicated().sum()
+Markdown(f"Il y a **{nb_doublons}** produits en doublons.")
+```
+
+En cas de doublons, je conserve le dernier produit modifié.
+
+```{python}
+data = data.drop_duplicates(subset="code", keep="first")
+```
+
+### Valeurs manquantes
+
+Je poursuis en visualisant les valeurs manquantes par colonnes avec un pivot_table et un diagramme à barres.
+
+```{python}
+tools.visualiser_valeurs_manquantes(data, 50)
+```
+
+On peut voir en orange les colonnes qui ont plus de 50 % de valeurs manquantes et vert les colonnes que l'on va conserver. Le taux de valeurs manquantes de la colonne `fiber_100g` est tout juste supérieur à ma limite de 50% (50,02). Je vais la conserver.
+
+Je supprime donc les colonnes `glucose_100g`, `sucrose_100g`, `trans-fat_100g` et `fruits-vegetables-nuts_100g`. \`
+
+```{python}
+col_to_remove = [
+    "fruits-vegetables-nuts_100g",
+    "glucose_100g",
+    "sucrose_100g",
+    "trans-fat_100g",
+]
+
+for col in col_to_remove:
+    col_nutriments.remove(col)
+    col_conservees.remove(col)
+
+data = data.drop(col_to_remove, axis=1)
+```
+
+Je supprime les produits sans noms et les produits sans marque.
+
+```{python}
+data_filter = data.dropna(subset=["product_name", "brands"])
+tools.compte_diff_lignes(len(data), len(data_filter))
+```
+
+```{python}
+data = data_filter
+```
+
+### Valeurs aberrantes
+
+Je commence par étudier la distribution des variables numériques.
+
+```{python}
+show(data.describe(), "Distribution des variables numériques")
+```
+
+Les variables nutriments ont des variables supérieures à 100g ou inférieures à 0g. De même pour la colonne énergie où le maximum est de 3251370kJ.
+
+Ces valeurs sont aberrantes, voyons comment les traiter.
+
+#### Energie
+
+Pour l'énergie_100g, suivant les informations collectées sur ce site <https://informationsnutritionnelles.fr/energie-kilojoules>.\n Les huiles font parties des aliments les plus caloriques. Leurs valeurs moyennes sont autour de 3700 kJ. Je fixe un seuil à 4000 kJ au dessus duquel je considère une valeurs comme aberrante.
+
+```{python}
+data_filter = data[["energy_100g"]].mask(data[["energy_100g"]] > 4000, np.nan)
+
+tools.compte_diff_lignes(
+    data_filter["energy_100g"].isna().sum(),
+    data["energy_100g"].isna().sum(),
+)
+```
+
+Je supprime 80 valeurs aberrantes.
+
+```{python}
+data[["energy_100g"]] = data_filter[["energy_100g"]]
+```
+
+```{python}
+tools.visualiser_quartiles(data[["energy_100g"]])
+```
+
+#### Nutriments
+
+Les valeurs doivent être comprises entre 0 et 100
+
+::: callout-note
+Les colonnes `_100g` sont stockées dans la variable col-nutriments
+
+```{python}
+print(col_nutriments)
+```
+:::
+
+Pour les nutriments, il ne peut pas y avoir de valeurs négatives ou supérieures à 100g.
+
+```{python}
+col_100g = [col for col in col_nutriments if col != "energy_100g"]
+```
+
+```{python}
+
+tools.visualiser_quartiles(data, col_100g, "Boxplot des nutriments avant filtrage")
+```
+
+Je commence par remplacer les valeurs négatives par NAN.
+
+```{python}
+
+data_filter = data[col_100g].mask(data[col_100g] < 0, np.nan)
+
+tools.compte_diff_lignes(
+    data_filter.isna().sum().sum(),
+    data[col_100g].isna().sum().sum(),
+)
+
+```
+
+```{python}
+data[col_100g] = data[col_100g].mask(data[col_100g] < 0, np.nan)
+```
+
+Puis les valeurs supérieures à 100g
+
+```{python}
+data_filter = data[col_100g].mask(data[col_100g] > 100, np.nan)
+
+tools.compte_diff_lignes(
+    data_filter.isna().sum().sum(),
+    data[col_100g].isna().sum().sum(),
+)
+```
+
+```{python}
+data[col_100g] = data_filter
+
+```
+
+J'ai 2 features qui caractérisent le taux de graisse par produit (`fat_100g` et `saturated-fat_100g`).\n `saturated` est une sous catégorie de `fat`, sa valeur ne peut donc pas être supérieure à celle de `fat`.
+
+Je remplace par NAN les valeurs de `saturated-fat` si elles sont supérieurs à `fat`
+
+```{python}
+data_filter = data["saturated-fat_100g"].mask(data["saturated-fat_100g"] > data["fat_100g"], np.nan)
+
+tools.compte_diff_lignes(
+    data_filter.isna().sum(),
+    data["saturated-fat_100g"].isna().sum(),
+)
+```
+
+```{python}
+data["saturated-fat_100g"] = data_filter
+```
+
+::: callout-note
+La somme des nutriments par produits ne peux pas dépasser 100g.
+:::
+
+Je note les produits dont la somme des nutriments est supérieures à 100g.
+
+```{python}
+data["Sum Nutriment"] = data[col_100g].sum(axis=1) > 100
+```
+
+Je calcule la proportion de proportion de produits dans le jeu de données.
+
+```{python}
+# Calculer la proportion de True en utilisant value_counts()
+proportion_de_true = data["Sum Nutriment"].value_counts(normalize=True).get(True)
+
+Markdown(f"Proportion de True : **{proportion_de_true:.2%}**")
+```
+
+Je supprime les produits dont la somme des nutriments dépasse 100g.
+
+```{python}
+data = data.query("`Sum Nutriment` == False")
+
+data = data.drop("Sum Nutriment", axis=1)
+```
+
+```{python}
+tools.visualiser_quartiles(data, col_100g, "Boxplot des nutriments après filtrage")
+```
+
+J'ai supprimé beaucoup de lignes de mon jeu de données initial.\n Pour optimiser les performances, je le re-index.
+
+```{python}
+data = data.reset_index(drop=True) 
+```
+
+#### Groupes de produit
+
+Je vérifie si je peux supprimer d'autres valeurs aberrantes en étudiant les valeurs par type de produit.\n Pour cela je groupe les produits avec les catégories de `pnns_groups_1` qui est la plus générale.
+
+Je regarde les valeurs dans la colonne `pnns_groups_1`
+
+Pour chaque catégorie de produits j'analyse la proportion qu'elle représente.
+
+```{python}
+prop_cat_groups1_df = (
+    data["pnns_groups_1"]
+    .value_counts(normalize=True, dropna=False)
+    .mul(100)
+    .reset_index()
+    .rename(columns={"index": "pnns_groups_1", 0: "proportion"})
+)
+
+# Ajouter la colonne des fréquences
+prop_cat_groups1_df["frequence"] = data["pnns_groups_1"].value_counts(dropna=False).values
+
+show(prop_cat_groups1_df.sort_values(by="frequence"), "Proportion et Fréquence des catégories de produits")
+
+```
+
+```{python}
+chart = (
+    alt.Chart(data)
+    .mark_bar()
+    .encode(
+        x=alt.X(
+            "pnns_groups_1:N",
+            axis=alt.Axis(labelAngle=-45),
+        ),
+        y=alt.Y(
+            "count()",
+        ),
+        color="pnns_groups_1:N",
+        tooltip=[
+            "pnns_groups_1:N",
+            alt.Tooltip("count()", format=".0f"),
+        ],
+    )
+    .properties(title="Nombre de produit par catégorie")
+    .interactive()
+)
+chart
+```
+
+Des catégories semblent être en doublon (`Cereals and potatoes` et `cereals-and-potatoes`), (`Fruits and vegetables` et `fruits-and-vegetables`) et (`Sugary snacks` et `sugary-snacks`)
+
+Le nombre de produits de ces catégories est assez faible.\n Je les normalise et fusionne les catégories.
+
+```{python}
+# Remplacer les tirets par des espaces
+data.loc[:, "pnns_groups_1"] = data["pnns_groups_1"].str.replace("-", " ")
+
+# Trier les valeurs et les capitaliser
+data.loc[:, "pnns_groups_1"] = data["pnns_groups_1"].sort_values().str.capitalize()
+
+```
+
+Je regarde ensuite un échantillon des produits avec la catégorie `Unknown`
+
+::: panel-tabset
+##### Produits `Unknown`
+
+```{python}
+show(data.query("pnns_groups_1 == 'Unknown'")["product_name"].head(50), "Échantillon de produit catégorisés Unknown")
+```
+
+##### Produits `NAN`
+
+```{python}
+show(data[data["pnns_groups_1"].isna()]["product_name"].head(50), "Échantillon de produit catégorisés NAN")
+```
+:::
+
+Je ne voie pas de différences entre les produits, je les regroupe pour n'avoir plus qu'une seule catégorie.
+
+```{python}
+data.loc[:,"pnns_groups_1"] = data["pnns_groups_1"].replace("Unknown", np.nan)
+```
+
+Pour pnns_groups_2 j'applique directement la même méthode.
+
+```{python}
+data.loc[:, "pnns_groups_2"] = data["pnns_groups_2"].replace("unknown", np.nan)
+```
+
+#### Distribution
+
+A lecture des boxplots, je remarque des valeurs maximales suspectent pour les valeurs nutritives suivantes: `saturated-fat_100g`, `fiber_100g`, `proteins_100g`, `sodium_100g`.\n Je visualise leurs distribution pour vérifier si ce sont des valeurs aberrantes ou des valeurs atypiques.
+
+::: panel-tabset
+##### `saturated-fat_100g`
+
+```{python}
+show(data.query("`saturated-fat_100g` > 50 & pnns_groups_1.notna()"))
+```
+
+Ce sont essentiellement des beurres. La distribution est correcte.
+
+##### `fiber_100g`
+
+Je liste les produits qui ont une valeurs nutritives `fiber_100g` supérieures à 50g.
+
+```{python}
+show(data.query("fiber_100g > 50 & pnns_groups_1.notna()"))
+```
+
+##### `proteins_100g`
+
+Je liste les produits qui ont une valeurs nutritives `proteins_100g` supérieures à 50g.
+
+```{python}
+show(data.query("proteins_100g > 50 & pnns_groups_1.notna()"))
+```
+
+##### `sodium_100g`
+
+Je liste les produits qui ont une valeurs nutritives `proteins_100g` supérieures à 50g.
+
+```{python}
+show(data.query("sodium_100g > 20 & pnns_groups_1.notna()"))
+```
+
+Le sel qui est le produit le plus salé contient au maximum 3,9g.
+
+Je passe les valeurs supérieures à 3,9g à zéro.
+
+```{python}
+data_filter = data["sodium_100g"].mask(data["sodium_100g"] > 3.9, 0)
+
+tools.compte_diff_lignes(
+    data_filter.eq(0).sum(),
+    data["sodium_100g"].eq(0).sum(),
+)
+```
+
+```{python}
+data.loc[:, "sodium_100g"] = data_filter
+```
+:::
+
+```{python}
+tools.save_intermediate_data(data, "save_before_dist_analysis")
+```
+
+```{python}
+data = tools.load_intermediate_data("save_before_dist_analysis")
+
+```
+
+### Sélection des variables du moteur de suggestion
+
+Pour rappel, l'objectif du projet est de proposer un algorithme de suggestion de valeurs nutritives par produits.\n Pour faciliter la comparaison et la saisie d'informations, j'ai quand même besoin d'avoir une variable qui indique la catégorie du produit.\n Je conserve la variable `pnns_groups_1` qui est la plus générale et contient le moins de valeurs manquantes.
+
+Je crée un nouveau jeu de données à partir du jeu de données initial en vue de créer un algorithme de suggestion de valeurs nutritives par produit pour mon application.
+
+```{python}
+# Dataset avec colonnes pour l'application
+application_nutrition_dataset_with_missings = data
+```
+
+```{python}
+# Dataset avec uniquement les colonnes utiles pour mon moteur de recherche.
+col_to_keep = [
+    "code",
+    "pnns_groups_1",
+    "energy_100g",
+    "fat_100g",
+    "saturated-fat_100g",
+    "sugars_100g",
+    "fiber_100g",
+    "proteins_100g",
+    "sodium_100g",
+]
+
+suggestion_df = data[col_to_keep].copy(deep=True)
+```
+
+En vue de créer un algorithme de suggestion de valeurs nutritive par produit pour mon application. Je dois m'assurer d'avoir un jeu de données fiable avec le moins de données manquantes possible.
+
+### Traitement des valeurs manquantes
+
+Visualisation des valeurs manquantes.
+
+```{python}
+tools.visualiser_valeurs_manquantes(suggestion_df)
+```
+
+Je commence par supprimer les produits qui n'ont pas de catégories dans `pnns_groups_1`.
+
+```{python}
+suggestion_df = suggestion_df.dropna(subset=["pnns_groups_1"])
+suggestion_df = suggestion_df.reset_index(drop=True)
+```
+
+```{python}
+Markdown(f"Le Dataframe du moteur de suggestion des valeurs nutritives contient **{len(suggestion_df)}** produit")
+```
+
+```{python}
+tools.visualiser_valeurs_manquantes(suggestion_df)
+```
+
+La variable `fiber_100g` contient le plus de valeurs manquantes.
+
+Avant de poursuivre sur l'imputation des valeurs manquantes, je visualise le nombre de valeurs manquantes par produit.
+
+```{python}
+# |fig-cap: "Nombre de nutriments manquants par produits avant suppressions des manquants"
+col_100g = [
+    "energy_100g",
+    "fiber_100g",
+    "fat_100g",
+    "saturated-fat_100g",
+    "sugars_100g",
+    "sodium_100g",
+    "proteins_100g",
+]
+
+tools.matrix_manquants(suggestion_df, col_100g, "Données numériques manquantes par produits")
+```
+
+Mon dataframe contient des produits avec toutes les valeurs nutritives manquantes.\n Je supprime ces lignes.
+
+```{python}
+data_filter = suggestion_df.dropna(how="all", subset=col_100g)
+data_filter = data_filter.reset_index(drop=True)
+
+tools.compte_diff_lignes(len(suggestion_df), len(data_filter))
+```
+
+Un peu moins de 20% des produits ont leurs valeurs nutritives manquantes. Les conserver lors de l'imputation engendrerais trop de biais.\n Je les supprime et visualise à nouveaux la matrices des manquants.
+
+```{python}
+suggestion_df = data_filter
+```
+
+```{python}
+tools.matrix_manquants(suggestion_df, col_100g, "Données numériques manquantes par produits")
+```
+
+### Visualiser
+
+Je visualise la distribution de chaque colonnes nutritives.
+
+```{python}
+tools.histogram_features(suggestion_df, col_100g)
+```
+
+::: callout-note
+Indice de skew:
+
+-   Un coefficient négatif indique une distribution décalée à droite de la médiane, et donc une queue de distribution étalée vers la gauche.
+
+-   Un coefficient positif indique une distribution décalée à gauche de la médiane, et donc une queue de distribution étalée vers la droite.
+
+-   Un coefficient nul n'indique pas nécessairement que la distribution est symétrique, mais une distribution symétrique a un coefficient nul.
+:::
+
+Les variables sont distribuées de façon asymétrique à droite.
+
+::: callout-note
+Plusieurs méthode sont applicables pour remplacer les valeurs manquantes.
+
+- Ne rien faire ➡️ Si le nombre de manquant est faible.
+
+- Supprimer les produits avec des manquants ➡️ L'échantillon peut devenir trop faible
+
+- Méthode d'imputation simple (mode, médiane, moyenne) pour les mêmes types de produit.
+
+- Remplacer les valeurs manquantes par prévision statistique (knnImputer ou iterativeImputer)
+:::
+
+Avant de modifier les données, je crée une copie des valeurs nutritives de mon jeu de données.
+
+```{python}
+suggestion_df_copy = suggestion_df.copy(deep=True)
+```
+
+```{python}
+tools.visualiser_valeurs_manquantes(suggestion_df_copy)
+```
+
+La méthode de remplacement par la médiane est la plus robuste pour les distributions très asymétrique (skew très éloigné de 0).\n
+
+### Médiane
+
+Ainsi, j'applique la méthode de simpleImputer par la médiane sur les colonnes suivantes: `energy_100g`, `proteins_100g`, `sodium_100g` et `sugars_100g`.
+
+```{python}
+columns_to_impute = [
+    "energy_100g",
+    "proteins_100g",
+    "sodium_100g",
+    "sugars_100g",
+]
+
+# Extraction des colonnes sélectionnées du DataFrame
+selected_data = suggestion_df_copy[columns_to_impute].copy(deep=True)
+
+# Création et application de l'imputeur utilisant la médiane
+imputer = SimpleImputer(missing_values=pd.NA, strategy="median")
+imputer.set_output(transform="pandas")
+
+selected_data_imputed = imputer.fit_transform(selected_data)
+```
+
+Je vérifie si l'imputation n'a pas modifié la distribution des variables.
+
+::: panel-tabset
+
+#### Avant imputation
+
+```{python}
+selected_data.describe().round()
+```
+
+#### Après imputation
+
+```{python}
+selected_data_imputed.describe().round()
+```
+
+:::
+
+Pas de changement notable, je peux fusionner les données.
+
+```{python}
+# Mise à jour du DataFrame original
+suggestion_df_copy[columns_to_impute] = selected_data_imputed
+```
+
+### Iterative Imputer
+
+J'applique un iterative imputer sur les colonnes `fat_100g` et `saturated-fat_100g` en utilisant les variables précédentes.
+
+```{python}
+from sklearn.impute import IterativeImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.experimental import enable_iterative_imputer
+
+# Sélection des colonnes à imputer
+imputed_columns = [
+    "energy_100g",
+    "proteins_100g",
+    "sodium_100g",
+    "sugars_100g",
+]
+columns_to_impute = [
+    "fat_100g",
+    "saturated-fat_100g",
+]
+
+columns_to_impute = imputed_columns + columns_to_impute
+selected_data = suggestion_df_copy[columns_to_impute]
+
+# Application de l'IterativeImputer
+imputer = IterativeImputer(
+    random_state=42,
+    min_value=0,
+    max_value=100,
+)
+
+selected_data_imputed = imputer.fit_transform(selected_data)
+
+selected_data_imputed = pd.DataFrame(
+    data=selected_data_imputed,
+    columns=columns_to_impute,
+)
+```
+
+::: panel-tabset
+#### Avant imputation
+
+```{python}
+selected_data.describe().round()
+```
+
+#### Après imputation
+
+```{python}
+selected_data_imputed.describe().round()
+```
+:::
+
+Pas de changement notable, je peux fusionner les données.
+
+```{python}
+# Mise à jour du DataFrame original
+suggestion_df_copy[columns_to_impute] = selected_data_imputed
+```
+
+### KNN Imputer
+
+Seulement la variables `fiber_100g` contient encore des valeurs manquantes.\n J'utilise un kNN Imputer.
+
+Je commence par chercher le k optimal. Pour cela, je pars des données qui ne contiennent pas de manquants.
+
+```{python}
+# Sélection des colonnes à imputer
+imputed_columns = [
+    "energy_100g",
+    "proteins_100g",
+    "sodium_100g",
+    "sugars_100g",
+    "fat_100g",
+    "saturated-fat_100g",
+]
+columns_to_impute = [
+    "fiber_100g",
+]
+
+columns_to_impute = imputed_columns + columns_to_impute
+
+# Extraction des colonnes sélectionnées du DataFrame
+selected_data = suggestion_df_copy[columns_to_impute]
+
+# Création d'un jeu de données complet de référence
+df_no_nan = selected_data.dropna()
+
+# Échantillonnage pour accélérer les calculs
+df_sample = df_no_nan.sample(frac=0.25, random_state=42)
+
+# Séparation train-test
+train, test = train_test_split(
+    df_sample,
+    test_size=0.25,
+    random_state=42,
+)
+
+# Normalisation des données
+scaler = StandardScaler()
+train_scaled = scaler.fit_transform(train)
+test_scaled = scaler.transform(test)
+
+# Génération du masque de valeurs manquantes reproductible
+rng = np.random.RandomState(42)
+nan_mask = rng.rand(*test_scaled.shape) < 0.1  # 10% de valeurs manquantes
+test_with_nan_scaled = test_scaled.copy()
+test_with_nan_scaled[nan_mask] = np.nan
+
+# Évaluation des différentes valeurs de k
+errors = []
+neighbors_range = range(1, 20)
+for k in neighbors_range:
+    # Entraînement et imputation
+    imputer = KNNImputer(n_neighbors=k)
+    imputer.fit(train_scaled)
+    test_imputed_scaled = imputer.transform(test_with_nan_scaled)
+
+    # Retour à l'échelle originale
+    test_imputed = scaler.inverse_transform(test_imputed_scaled)
+    # Calcul d'erreur uniquement sur les valeurs imputées
+    error = mean_squared_error(test.values[nan_mask], test_imputed[nan_mask])
+    errors.append(error)
+
+# Résultats et visualisation
+optimal_k = neighbors_range[np.argmin(errors)]
+Markdown(f"Valeur optimale de k: **{optimal_k}** (MSE: {min(errors):.4f}g)")
+plt.figure(figsize=(10, 6))
+plt.plot(neighbors_range, errors, marker="o", linestyle="--")
+plt.xlabel("Nombre de voisins (k)")
+plt.ylabel("MSE (échelle originale)")
+plt.title("Performance du KNNImputer selon le nombre de voisins")
+plt.grid(True)
+plt.show()
+```
+
+L'erreur induite par le KNNImputer est la plus faible lorsque le nombre de voisins utilisés pour l'imputation est de 14.
+
+J'applique l'imputation des données sur l’entièreté des colonnes `fiber_100g`
+
+```{python}
+from sklearn.impute import KNNImputer
+from sklearn.preprocessing import StandardScaler
+
+# Sélection des colonnes à imputer
+imputed_columns = [
+    "energy_100g",
+    "proteins_100g",
+    "sodium_100g",
+    "sugars_100g",
+    "fat_100g",
+    "saturated-fat_100g",
+]
+columns_to_impute = [
+    "fiber_100g",
+]
+
+columns_to_impute = imputed_columns + columns_to_impute
+selected_data = suggestion_df_copy[columns_to_impute]
+
+# Normalisation des données
+scaler = StandardScaler()
+selected_data_scaled = scaler.fit_transform(selected_data)
+
+# Application du KNNImputer avec k optimal
+optimal_k = 14  # Remplace par la valeur trouvée
+imputer = KNNImputer(n_neighbors=optimal_k)
+
+selected_data_imputed_scaled = imputer.fit_transform(selected_data_scaled)  # Fit + transform
+
+# Retour aux valeurs originales (dénormalisation)
+selected_data_imputed = scaler.inverse_transform(selected_data_imputed_scaled)
+
+selected_data_imputed = pd.DataFrame(
+    data=selected_data_imputed,
+    columns=columns_to_impute,
+)
+```
+
+::: panel-tabset
+#### Avant imputation
+
+```{python}
+selected_data.describe().round()
+```
+
+#### Après imputation
+
+```{python}
+selected_data_imputed.describe().round()
+```
+:::
+
+Pas de changement notable, je peux fusionner les données.
+
+```{python}
+# Mise à jour du DataFrame original
+suggestion_df_copy[columns_to_impute] = selected_data_imputed
+```
+
+Je visualise la distribution des valeurs nutritives.
+
+```{python}
+tools.histogram_features(suggestion_df_copy, col_100g)
+```
+
+Les méthodes d'imputations ont recentré les distributions autour des valeurs médianes de chaque valeurs nutritives.
+
+Je reconstruis mon jeu de données.
+
+```{python}
+suggestion_df[col_100g] = suggestion_df_copy[col_100g]
+```
+
+```{python}
+tools.save_intermediate_data(suggestion_df, "save_before_analysis")
+```

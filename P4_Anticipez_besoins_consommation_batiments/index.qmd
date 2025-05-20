@@ -1,0 +1,35 @@
+---
+title: Anticipez les besoins en consommation de bâtiments
+authors:
+  - name: Guillaume LAFON
+    affiliation: OpenClassrooms
+    email: guillaumelafon13@gmail.com
+date: last-modified
+number-sections: false
+abstract: |
+    - **But de la mission** : 
+    
+    Aider la ville de Seattle à atteindre son objectif de ville neutre en émission de carbone en 2050.\n
+    Pour ce projet, je suis chargé d'étudier les relevés réalisés par les agents de la ville des bâtiments non destinés à l'habitation.\n
+    Puis je dois prédire les émissions de CO2  et la consommation totale d'énergie pour des futurs bâtiments sans avoir besoin d'effectuer des relevés.
+
+    - **Détails de la mission** :
+
+    1. Analyser les relevés de 2016 de la ville de Seattle.
+    2. Sélectionnes les features les plus pertinentes pour le modèle de prédiction d'émissions.
+    3. Identifier les valeurs aberrantes et les bâtiments destinés à l'habitation.
+    4. Entraîner un premier modèle de machine learning.
+    5. Étudier les points faibles du modèle et chercher à l'améliorer en optimisant la sélection des features.
+    6. Entraîner plusieurs modèles et le comparer pour sélectionne l'optimal.
+    7. Documenter les forces et faiblesses du modèle conservé.
+    8. Analyser l'influence de l'indicateur EnergyStarScore sur le modèle.
+
+categories:
+  - Consommation énergétique
+  - OpenClassrooms
+  - Machine Learning
+
+format: html
+
+---
+

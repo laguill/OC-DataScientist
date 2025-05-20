@@ -5,7 +5,7 @@ authors:
   - name: Guillaume LAFON
     affiliation: OpenClassrooms
     email: guillaumelafon13@gmail.com
-keywords:
+categories:
   - EdStats
   - OpenClassrooms
   - academy

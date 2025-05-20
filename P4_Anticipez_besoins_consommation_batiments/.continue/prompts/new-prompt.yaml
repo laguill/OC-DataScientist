@@ -1,0 +1,35 @@
+name: Prompt pour l'Analyse Exploratoire des Données
+version: 0.0.2
+schema: v1
+
+prompts:
+  - name: Analyse Exploratoire des Données
+    description: Exploration initiale des données et principales conclusions
+    prompt: |
+      Crée un workflow d'analyse exploratoire des données qui inclut :
+
+      Aperçu des Données :
+      - Statistiques de base (moyenne, médiane, écart-type, quartiles)
+      - Valeurs manquantes et types de données
+      - Distributions des valeurs uniques
+      - ydata-profiling
+
+      Visualisations :
+      - Numériques : histogrammes, diagrammes en boîte
+      - Catégorielles : diagrammes en barres, graphiques de fréquence
+      - Relations : matrices de corrélation
+      - Schémas temporels (si applicable)
+
+      Évaluation de la Qualité :
+      - Détection des valeurs aberrantes
+      - Incohérences des données
+      - Validation des plages de valeurs
+
+      Conclusions et Documentation :
+      - Résumé des principales conclusions
+      - Problèmes de qualité des données
+      - Relations entre les variables
+      - Recommandations pour les prochaines étapes
+      - Notebook Marimo reproductible
+
+      L'utilisateur a fourni les informations suivantes :

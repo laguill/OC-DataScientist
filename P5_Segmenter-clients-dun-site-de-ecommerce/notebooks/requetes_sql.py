@@ -1,11 +1,7 @@
 import marimo
 
-__generated_with = "0.13.15"
-app = marimo.App(
-    width="medium",
-    app_title="P5 Requetes Dashboard",
-    auto_download=["html", "ipynb"],
-)
+__generated_with = "0.13.10"
+app = marimo.App(width="medium", app_title="P5 Requetes Dashboard")
 
 
 @app.cell(hide_code=True)
@@ -62,16 +58,9 @@ def _(mo):
 
     3. Qui sont les nouveaux vendeurs (moins de 3 mois d'ancienneté) qui sont déjà très engagés avec la plateforme (ayant déjà vendu plus de 30 produits) ?
 
-    4. Quels sont les 5 codes postaux, enregistrant plus de 30 reviews, avec le pire review score moyen sur les 12 derniers mois ?
+    3. Quels sont les 5 codes postaux, enregistrant plus de 30 reviews, avec le pire review score moyen sur les 12 derniers mois ?
     """
     )
-    return
-
-
-@app.cell
-def _(mo):
-    _src = "notebooks/public/relation_db.png"
-    mo.image(src=_src, rounded=True)
     return
 
 
@@ -91,7 +80,7 @@ def _(mo):
 def _():
     import marimo as mo
     import pandas as pd
-    import seaborn as sns
+
     import sqlalchemy
 
     DATABASE_URL = "sqlite:///data/raw/olist.db"
@@ -182,21 +171,7 @@ def _(engine, mo, orders):
 
 
 @app.cell
-def _(engine, mo):
-    _df = mo.sql(
-        f"""
-        SELECT
-            DATE(MAX(order_purchase_timestamp),"-3 months")
-        FROM
-            orders
-        """,
-        engine=engine,
-    )
-    return
-
-
-@app.cell
-def _(engine, mo):
+def _(engine, mo, orders):
     _df = mo.sql(
         f"""
         SELECT
@@ -240,60 +215,47 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(mo):
     mo.md(
         r"""
-    - ~~Charger la table `order_items`~~ ✅
-    - ~~Fusionner avec la table order pour récupérer les produits livrés `order`~~ ✅
-    - ~~Sélectionner colonnes `seller_id` et `price`~~ ✅
-    - ~~Calculer la somme de `price_id` et renommer en chiffre d'affaire~~ ✅
-    - ~~Grouper par `seller_id`~~ ✅
-    - ~~Conserver les lignes dont chiffres d'affaires supérieurs à 100 000~~ ✅
-    - ~~Classer les chiffres d'affaires par ordre croissant~~ ✅
+    - Charger la table `order_items`
+    - Selectionner colonnes `seller_id` et `price`
+    - Calculer la somme de `price_id` et renommer en chiffre d'affaire
+    - Grouper par `seller_id`
+    - Conserver les lignes dont chiffres d'affaires supérieurs à 100 000
+    - Classer les chiffres d'affaires par ordre croissant
     """
     )
     return
 
 
 @app.cell
-def _(engine, mo, order_items, orders):
+def _(engine, mo, order_items):
     _df = mo.sql(
         f"""
-        WITH
-            orders_joined as (
-                SELECT
-                    i.seller_id,
-                    i.order_id,
-                    i.price,
-                    o.order_purchase_timestamp
-                FROM
-                    order_items as i
-                    INNER JOIN orders as o ON o.order_id = i.order_id
-                WHERE
-                    o.order_status = 'delivered'
-                ORDER BY
-                    seller_id,
-                    order_purchase_timestamp
-            ),
-            aggregation AS (
-                SELECT
-                    seller_id,
-                    sum(price) AS total_amount_sold,
-                    count(order_id) AS total_items_sold
-                FROM
-                    orders_joined
-                GROUP BY
-                    seller_id
-            )
         SELECT
-            *
+            seller_id,
+            SUM(price) AS chiffre_affaire
         FROM
-            aggregation
-        WHERE
-            total_amount_sold > 100000
+            order_items
+        GROUP BY
+            seller_id
+        HAVING
+            chiffre_affaire > 100000
         ORDER BY
-            total_amount_sold DESC
+            chiffre_affaire DESC
+        """,
+        engine=engine,
+    )
+    return
+
+
+@app.cell
+def _(engine, mo, sqlite_master):
+    _df = mo.sql(
+        f"""
+        SELECT * FROM sqlite_master WHERE type='table'
         """,
         engine=engine,
     )
@@ -324,7 +286,7 @@ def _(mo):
     - ~~Trouver date première vente des vendeurs **MIN()**~~ ✅
     - ~~Grouper par vendeur~~ ✅
     - ~~Filtrer pour conserver première vente datant de moins de 3 mois~~ ✅
-    - ~~Agréger avec la somme du nombre de produits vendus~~ ✅
+    - ~~Aggréger avec la somme du nombre de produits vendus~~ ✅
     - ~~Filtrer pour conserver les vendeurs où nb_produits_vendu > 30~~ ✅
     """
     )
@@ -332,19 +294,16 @@ def _(mo):
 
 
 @app.cell
-def _(engine, mo):
+def _(engine, mo, order_items, orders):
     _df = mo.sql(
         f"""
         SELECT
             order_items.seller_id,
-            orders.order_id,
             MIN(orders.order_purchase_timestamp) AS premiere_vente,
             COUNT(order_items.product_id) AS nombre_produits_vendus
         FROM
-            order_items,
-            orders
-        WHERE
-            order_items.order_id = orders.order_id
+            order_items
+            JOIN orders ON order_items.order_id = orders.order_id
         GROUP BY
             order_items.seller_id
         HAVING
@@ -358,8 +317,6 @@ def _(engine, mo):
                 '-3 months'
             )
             AND COUNT(order_items.product_id) > 30
-        ORDER BY
-            premiere_vente DESC
         """,
         engine=engine,
     )
@@ -380,84 +337,6 @@ def _(mo):
 
     **Quels sont les 5 codes postaux, enregistrant plus de 30 reviews, avec le pire review score moyen sur les 12 derniers mois ?**
     """
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    - ~~Zip code de customer `customer_zip_code_preview`~~✅
-    - ~~collecter les review des 12 derniers mois~~✅
-    - ~~Aggréger le nombre de review (COUNT)~~✅
-    - ~~filtrer pour conserver nb review > 30~~ ✅
-    - ~~calculer la moyenne des review~~✅
-    - ~~Conserver les 5 derniers code postaux (LIMIT)~~✅
-    - ~~Trier les notes par ordre croissant~~✅
-    """
-    )
-    return
-
-
-@app.cell
-def _(engine, mo):
-    _df = mo.sql(
-        f"""
-        WITH
-            -- get last order date
-            LastOrderDate AS (
-                SELECT
-                    MAX(order_purchase_timestamp) AS last_order_date
-                FROM
-                    orders
-            ),
-            -- get the zip codes where orders were sent
-            join_orders_geoloc AS (
-                SELECT
-                    o.order_id,
-                    o.order_purchase_timestamp,
-                    c.customer_zip_code_prefix
-                FROM
-                    orders AS o
-                    JOIN customers AS c ON o.customer_id = c.customer_id
-            ),
-            -- merge CTE's to get avg review score and nb of review per zip code
-            average_review_score_per_zip AS (
-                SELECT
-                    customer_zip_code_prefix,
-                    AVG(review_score) AS avg_review_score,
-                    COUNT(review_score) AS nb_reviews
-                FROM
-                    order_reviews AS r
-                    JOIN join_orders_geoloc AS o ON r.order_id = o.order_id
-                WHERE
-                    order_purchase_timestamp >= DATE(
-                        (
-                            SELECT
-                                *
-                            FROM
-                                LastOrderDate
-                        ),
-                        "-12 months"
-                    )
-                GROUP BY
-                    customer_zip_code_prefix
-            )
-            -- Filter only zip code with at least 30 reviews
-            -- Also Filter to get only top 
-        SELECT
-            *
-        FROM
-            average_review_score_per_zip
-        WHERE
-            nb_reviews > 30
-        ORDER BY
-            avg_review_score
-        LIMIT
-            5
-        """,
-        engine=engine,
     )
     return
 
