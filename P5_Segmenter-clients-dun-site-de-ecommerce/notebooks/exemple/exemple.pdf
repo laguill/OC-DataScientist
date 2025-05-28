@@ -1,0 +1,548 @@
+---
+title: Introduction
+jupyter: python3
+---
+
+
+
+## Prêt à mener la mission ?
+
+Vous êtes consultant pour <a href="https://olist.com/">Olist</a>, une entreprise brésilienne qui propose une solution de vente sur les marketplaces en ligne.
+
+
+Votre rôle est d’accompagner Olist dans leur projet de monter une équipe Data et leur premier cas d’usage Data Science autour de la segmentation client.
+
+
+Vous venez de rejoindre Olist dans un contexte de recrutement intensif afin de monter leur équipe Data. En effet, ils font d’abord appel à des consultants comme vous en renfort sur les sujets les plus critiques en attendant d'internaliser les compétences. Avant de réaliser la segmentation client, on vous attribue une première mission pour aider Fernanda, Lead Data Analyst chez Olist. 
+
+
+Après avoir étudié les éléments partagés par Fernanda vous vous mettez au travail.
+
+
+------------------------
+
+## Quelques jours plus tard
+ 
+
+Cette urgence résolue, vous pouvez enfin passer à votre mission principale : Olist souhaite que vous fournissiez à ses équipes d'e-commerce une **segmentation des clients** qu’elles pourront utiliser au quotidien pour leurs campagnes de communication.
+
+
+Votre objectif est de comprendre les différents types d’utilisateurs grâce à leur comportement et à leurs données personnelles.
+ 
+
+Vous devrez fournir à l’équipe Marketing **une description actionable** de votre segmentation et de sa logique sous-jacente pour une utilisation optimale, ainsi qu’une proposition de contrat de maintenance basée sur une analyse de la stabilité des segments au cours du temps.
+
+
+**<u>Les données</u>**
+
+Pour cette mission, Olist vous fournit une <a href="https://course.oc-static.com/projects/olist.db">base de données</a> anonymisée comportant des informations sur l’historique des commandes, les produits achetés, les commentaires de satisfaction, et la localisation des clients depuis janvier 2017.
+ 
+
+Vous devez aider les équipes d’Olist à comprendre les différents types d'utilisateurs. Vous utiliserez donc des méthodes non supervisées pour regrouper des clients de profils similaires. Ces catégories pourront être utilisées par l’équipe Marketing pour mieux communiquer.
+ 
+
+Vous créez donc un notebook et démarrez votre travail d’analyse exploratoire.
+
+
+------------------------
+ 
+## 3 jours plus tard
+ 
+
+Après quelques premières analyses, vous vous rendez compte qu'Olist ne vous a pas fourni beaucoup de données ; vous enquêtez donc auprès de l'entreprise pour obtenir quelques informations complémentaires, et vérifier que vous avez bien compris la mission.
+
+
+Vous réalisez trois autres documents afin de préparer une réponse à Olist : 
+
+- Un notebook avec des essais des différentes approches de modélisation 
+- Un notebook de simulation pour déterminer la fréquence nécessaire de mise à jour du modèle de segmentation, afin que celui-ci reste pertinent 
+- Une présentation pour un collègue afin d’obtenir ses retours sur votre approche
+ 
+
+C’est parti pour cette dernière ligne droite ! 
+
+# Import des librairies
+
+```{python}
+import sqlite3
+import pandas as pd
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import seaborn as sns
+import missingno as msno
+from sklearn.preprocessing import StandardScaler
+```
+
+## Chargement de seaborn
+
+```{python}
+sns.set()
+```
+
+# Chargement de la base de données
+
+## Initialisation de la connexion à la base de donnnées
+
+```{python}
+database_path = "data/olist.db"
+```
+
+```{python}
+# Etablishing connection
+sqlite_connection = sqlite3.connect(database_path)
+
+# Getting all tables from sqlite_master
+sql_query = """SELECT name FROM sqlite_master
+WHERE type='table'"""
+
+# Creating the cursor object from the connection object
+cursor = sqlite_connection.cursor()
+
+# Executing the query
+cursor.execute(sql_query)
+
+# Stocking table list in a variable for further use
+table_list = cursor.fetchall()
+
+# Printing the list
+print("List of tables :\n")
+print(f"{table_list}\n")
+```
+
+## Lecture des différentes tables
+
+```{python}
+# Creating a pandas dataframe from each table of the database
+customers = pd.read_sql_query("SELECT * FROM customers", sqlite_connection)
+geoloc = pd.read_sql_query("SELECT * FROM geoloc", sqlite_connection)
+order_items = pd.read_sql_query("SELECT * FROM order_items", sqlite_connection)
+order_pymts = pd.read_sql_query("SELECT * FROM order_pymts", sqlite_connection)
+order_reviews = pd.read_sql_query("SELECT * FROM order_reviews", sqlite_connection)
+orders = pd.read_sql_query("SELECT * FROM orders", sqlite_connection)
+products = pd.read_sql_query("SELECT * FROM products", sqlite_connection)
+sellers = pd.read_sql_query("SELECT * FROM sellers", sqlite_connection)
+translation = pd.read_sql_query("SELECT * FROM translation", sqlite_connection)
+
+# Finally we close the connection to the database
+sqlite_connection.close()
+```
+
+## Description des relations entre les différentes tables
+
+D'après l'image suivante (<a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce/data">source</a>), qui présente les relations entre les différentes tables de la base de données, nous choisissons de travailler avec les tables suivantes, qui sont directement en lien avec les clients :
+- customers
+- orders
+- order_reviews
+- order_pymts
+- order_items
+- products
+
+![title](data/relations_bdd.png)
+
+## Affichons les entêtes de nos dataframes
+
+```{python}
+# Display the head of the dataframe
+customers.head()
+```
+
+```{python}
+# Display the head of the dataframe
+orders.head()
+```
+
+```{python}
+# Display the head of the dataframe
+order_reviews.head()
+```
+
+```{python}
+# Display the head of the dataframe
+order_pymts.head()
+```
+
+```{python}
+# Display the head of the dataframe
+order_items.head()
+```
+
+```{python}
+# Display the head of the dataframe
+products.head()
+```
+
+On constate que tous les dataframes comportent une colonne index. Cette colonne s'avère problématique car elle va générer des doublons lors des concaténations que nous allons effectuer ensuite.
+
+Aussi nous allons la supprimer pour chacun des dataframes.
+
+```{python}
+# Drop the index column, resulting from the SQLite database
+customers.drop("index", axis=1, inplace=True)
+orders.drop("index", axis=1, inplace=True)
+order_reviews.drop("index", axis=1, inplace=True)
+order_pymts.drop("index", axis=1, inplace=True)
+order_items.drop("index", axis=1, inplace=True)
+products.drop("index", axis=1, inplace=True)
+```
+
+## Concaténation des informations à disposition
+
+```{python}
+# First we concatenate the customers and orders table based on the customer_id 
+# with a left join to keep all customers
+df = pd.merge(customers, orders, on="customer_id", how="left")
+
+# We concatenate with order_pymts, order_reviews, order_items based on the order_id 
+# with a left join to keep all customers again
+df = df.merge(order_pymts, on="order_id", how="left")
+df = df.merge(order_reviews, on="order_id", how="left")
+df = df.merge(order_items, on="order_id", how="left")
+
+# Finally we add the informations about the products based on the product_id
+# with a left join to keep all customers again
+df = df.merge(products, on="product_id", how="left")
+```
+
+# Exploration des données
+
+```{python}
+# Show the general informations of the dataframe
+df.info()
+```
+
+Plusieurs variables ne semblent pas pertinentes pour notre étude.
+
+Nous supprimerons les variables suivantes, car elles n'influent pas sur les habitudes d'achats des clients:
+* Les valeurs descriptives des produits :
+    * product_width_cm
+    * product_height_cm
+    * product_length_cm
+    * product_weight_g
+    * product_photos_qty
+    * product_description_lenght
+    * product_name_lenght
+    * product_id
+    * product_category_name
+    * price 
+* Les informations d'expédition :
+    * freight_value
+    * shipping_limit_date
+* Les informations d'adresses :
+    * customer_city
+    * customer_state
+* Les dates tout au long du cible de vie de la commande :
+    * review_answer_timestamp
+    * review_creation_date
+    * order_estimated_delivery_date
+    * order_delivered_customer_date
+    * order_delivered_carrier_date
+    * order_approved_at
+* Le contenu du commentaire (on conserve uniquement la note) :
+    * review_comment_message
+    * review_comment_title
+* Les informations de paiement (on conserve la somme) :
+    * payment_installments
+    * payment_sequential
+    * payment_type
+* Les id en provenance des différentes tables (nous ne conservons que l'id unique du client) :
+    * review_id
+    * seller_id
+    * order_item_id
+    * customer_id
+
+```{python}
+# Drop the selected columns
+df.drop(["product_width_cm", "product_height_cm", "product_length_cm", "customer_city",
+         "product_weight_g", "product_photos_qty", "product_description_lenght",
+         "product_name_lenght", "product_category_name", "product_id", "freight_value", 
+         "shipping_limit_date", "seller_id", "order_item_id", "customer_state",
+         "review_answer_timestamp", "review_creation_date", "review_comment_message", 
+         "review_comment_title", "review_id", "payment_installments", "payment_type",
+         "payment_sequential", "order_estimated_delivery_date", "order_delivered_customer_date", 
+         "order_delivered_carrier_date", "order_approved_at", "customer_id", "price",
+        ], axis=1, inplace=True)
+```
+
+Nous constatons que les dates n'ont pas été enregistrées avec le bon format, elles sont de types objects. 
+
+Corrigeons le champs suivant :
+- order_purchase_timestamp
+
+```{python}
+# Convert the purchase date to datetime format
+df["order_purchase_timestamp"] = pd.to_datetime(df["order_purchase_timestamp"])
+```
+
+La colonne order_status ne semble également pas intéressante pour notre étude, cependant intéressons nous aux différentes valeurs prises par celle-ci, avant de statuer sur la suppression de la variable.
+
+```{python}
+# Show the different values of the order_status column
+df["order_status"].value_counts()
+```
+
+On remarque que plusieurs commandes n'ont pas "abouties", aussi afin d'avoir des informations "complètes", nous ne conserverons que les commandes livrées (status = delivered).
+
+Nous supprimerons par la même occasion la colonne order_status.
+
+```{python}
+# Select only the orders where the status is delivered
+df = df.loc[df["order_status"] == "delivered", :]
+# Then drop the column as it is not necessary anymore
+df.drop(["order_status"], axis=1, inplace=True)
+```
+
+# Doublons de numéros de commandes
+
+```{python}
+orders.shape
+```
+
+```{python}
+df.shape
+```
+
+On peut constater que le dataframe initial des commandes ne contenait que 99441 lignes, or notre dataframe comprend à présent 115723.
+
+Cela s'explique par le fait qu'une ligne de commande a été multipliée par le nombre de produits la composant.
+
+Afin de corriger cela, nous allons supprimer les doublons sur les numéros de commandes.
+
+```{python}
+# Drop duplicates from order_id column
+df = df.drop_duplicates(subset=["order_id"])
+```
+
+# Feature engineering
+
+## Date de commande
+
+Nous allons transformer la date de commande en nombre de jours depuis l'achat, afin d'avoir une variable plus assimilable par nos modèles. De plus, nous nous servirons de cette nouvelle donnée pour estimer la récence selon la méthode RFM.
+
+Premièrement, nous recherchons la date la plus récente de commande
+
+```{python}
+# Filter the dataframe to find the most recent date
+last_order_date = df.loc[df["order_purchase_timestamp"]==df["order_purchase_timestamp"].max(), "order_purchase_timestamp"]
+```
+
+Puis ajoutons une colonne au dataframe en calculant le nombre de jours d'écart entre la date de commande la plus récente et la date de la commande concernée.
+
+```{python}
+# Count the number of days between the most recent order and each other orders
+df["days_since_last_order"] = (last_order_date.iloc[0] - df["order_purchase_timestamp"]).dt.days
+```
+
+## Fréquence d'achat
+
+On définit notre fonction d'aggrégation
+
+```{python}
+# Define the aggregation function where we count the number of order_ids
+agg = pd.NamedAgg(column="order_id", aggfunc="count")
+```
+
+On calcule le nombre de commande pour chaque client pour chaque année
+
+```{python}
+# Group the dataframe by customer_id, and apply the aggregation function defined earlier.
+# Note : in agg() we rename the result
+total_orders = df.groupby(by="customer_unique_id").agg(total_orders=agg)
+```
+
+On concatene les dataframes
+
+```{python}
+# We merge both the original dataframe and the one just created
+df = pd.merge(df, total_orders, how="left", on="customer_unique_id")
+```
+
+## Montant des achats
+
+On définit notre fonction d'aggrégation
+
+```{python}
+# Define the aggregation function where we calculate the sum of payment_values 
+agg = pd.NamedAgg(column="payment_value", aggfunc="sum")
+```
+
+On calcule le nombre de commande pour chaque client pour chaque année
+
+```{python}
+# Group the dataframe by customer_id, and apply the aggregation function defined earlier.
+# Note : in agg() we rename the result
+total_value = df.groupby(by="customer_unique_id").agg(total_value=agg)
+```
+
+On concatene les dataframes
+
+```{python}
+# We merge both the original dataframe and the one just created
+df = pd.merge(df, total_value, how="left", on="customer_unique_id")
+```
+
+## Review score moyen
+
+On définit notre fonction d'aggrégation
+
+```{python}
+# Define the aggregation function where we calculate the mean of review_scores
+agg = pd.NamedAgg(column="review_score", aggfunc="mean")
+```
+
+```{python}
+# Group the dataframe by customer_id, and apply the aggregation function defined earlier.
+# Note : in agg() we rename the result
+mean_review_score = df.groupby(by="customer_unique_id").agg(mean_review_score=agg)
+```
+
+On concatene les deux dataframes
+
+```{python}
+# We merge both the original dataframe and the one just created
+df = pd.merge(df, mean_review_score, how="left", on="customer_unique_id")
+```
+
+## Doublons de numéro de client
+
+Notre dataframe comprend à présent les informations de toutes les commandes pour chacun des clients. Afin de ne conserver qu'une ligne par client, nous devons nous séparer de tous les doublons par numéro de client. Or, le champ days_since_last_order a été calculé pour chaque commande. Si nous effectuons un drop_duplicates sur le champ customer_id, nous n'avons aucun contrôle sur la valeur qui sera retenue pour days_since_last_order.
+
+Aussi, nous allons effectuer un groupby en conservant les valeurs les plus petites pour chacune des variables. Cela résoudra notre problème et n'en occasionnera aucun autre car :
+- tous les champs calculés précédemment ont la même valeur pour chaque ligne correspondant à un client
+- de même le code postal du client ne devrait pas avoir changé, si c'était le cas en ne conservant que la commande la plus récente, le bon code postal sera conservé
+- nous supprimerons les autres champs ensuite
+
+```{python}
+# Group the dataframe by customer_id and get the min value of each columns
+df = df.groupby(by="customer_unique_id").min().reset_index()
+```
+
+## Suppression des colonnes qui ne sont plus utiles
+
+```{python}
+# Drop uneccasery columns
+df.drop(["order_id",
+         "payment_value",
+         "review_score",], axis=1, inplace=True)
+```
+
+# Analyse exploratoire
+
+```{python}
+# Show the total numbers of value for each row
+msno.bar(df)
+```
+
+Définissons une fonction pour notre analyse
+
+```{python}
+def print_statistics(dataframe, feature, display_plots=True):
+    ''' 
+    Print statistics and visualizations for a specific feature in a dataframe.
+
+    Parameters:
+        - dataframe (pd.DataFrame): The dataframe containing the data.
+        - feature (str): The feature (column name) to analyze.
+        - display_plots (bool): Whether to display the plots (default: True).
+
+    Returns:
+        - pd.DataFrame: A dataframe with statistical values for the feature with :
+            * Minimum value
+            * Maximum value
+            * Mode 
+            * Mean
+            * Median
+            * Variance
+            * Standard deviation
+            * Skewness
+            * Kurtosis
+    
+    Prints:
+        - Empirical distribution
+        - Interquartile range
+        - Density estimation
+    '''
+    # Check if the feature exists in the dataframe
+    if feature not in dataframe.columns:
+        raise ValueError(f"La colonne '{feature}' n'existe pas dans le dataframe.")
+    # Check if the feature is numeric, otherwise we can't get the statistics
+    if not pd.api.types.is_numeric_dtype(dataframe[feature]):
+        return f"La colonne '{feature}' doit contenir des données numériques."
+        
+    print("------------------------------------------------")
+    print(f"     Analyse de la feature {feature}")
+    print("------------------------------------------------")
+
+    # Create the list of statistics
+    statistics = {
+        "Min": dataframe[feature].min(),
+        "Max": dataframe[feature].max(),
+        "Mode": dataframe[feature].mode()[0],
+        "Moyenne": dataframe[feature].mean(),
+        "Mediane": dataframe[feature].median(),
+        "Variance": dataframe[feature].var(ddof=1),
+        "Ecart type": dataframe[feature].std(),
+        "Skewness": dataframe[feature].skew(),
+        "Kurtosis": dataframe[feature].kurtosis(),
+    }
+
+    # Convert the list to DataFrame
+    df_statistiques = pd.DataFrame.from_dict(statistics, orient='index', columns=["Value"])
+
+    if display_plots :
+        # Configure the grid for plots
+        plt.figure(figsize = (20, 6))
+        grid = plt.GridSpec(1, 3, wspace=0.5, hspace=0.3)
+        
+        # Empirical distribution
+        plt.subplot(grid[0,0])
+        dataframe[feature].hist(density=True)
+        plt.title("Distribution empirique", fontweight="bold")
+        plt.xlabel(f"{feature}")
+        plt.ylabel("Répartition")
+        plt.grid(axis="x")
+        
+        # Interquartile range
+        plt.subplot(grid[0,1])
+        dataframe.boxplot(column=[feature], vert=True)
+        plt.title("Ecarts interquartile", fontweight="bold")
+    
+        # Density estimation
+        plt.subplot(grid[0,2])
+        sns.kdeplot(data=dataframe[feature], fill=True)
+        plt.title("Estimation de la densité", fontweight="bold")
+        plt.xlabel(f"{feature}")
+        plt.ylabel("Densité")
+        plt.grid(color="gray", linestyle="-", linewidth=0.5)
+    
+        # Display the plots
+        plt.show()
+        
+    return df_statistiques
+```
+
+```{python}
+# Use the previously defined function to print statistics
+for feature in df.columns.to_list():
+    df_statistiques = print_statistics(df, feature)
+    print(df_statistiques)
+    print("\n")
+```
+
+## Valeurs manquantes mean_review_score
+
+La variable mean_review_score présente des valeurs manquantes, nous allons les compléter à l'aide de la valeur moyenne de la colonne
+
+```{python}
+# Use the mean of review_score to impute the missing values
+df.loc[df["mean_review_score"].isnull(), "mean_review_score"] = df["mean_review_score"].mean()
+```
+
+# Exportons nos données
+
+```{python}
+# Export the data to a csv file
+df.to_csv("data_cleaned.csv")
+```
+

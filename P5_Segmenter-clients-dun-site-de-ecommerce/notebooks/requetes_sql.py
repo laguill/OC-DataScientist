@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.13.10"
+__generated_with = "0.13.11"
 app = marimo.App(width="medium", app_title="P5 Requetes Dashboard")
 
 
@@ -64,6 +64,15 @@ def _(mo):
     return
 
 
+@app.cell
+def _(mo):
+    _src = (
+        "/home/laguill/Documents/01-Etudes/OpenClassrooms/P5_Segmenter-clients-dun-site-de-ecommerce/notebooks/public/image.png"
+    )
+    mo.image(src=_src, rounded=True)
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""### Chargement des données""")
@@ -80,6 +89,7 @@ def _(mo):
 def _():
     import marimo as mo
     import pandas as pd
+    import seaborn as sns
 
     import sqlalchemy
 
@@ -175,6 +185,20 @@ def _(engine, mo, orders):
     _df = mo.sql(
         f"""
         SELECT
+            DATE(MAX(order_purchase_timestamp),"-3 months")
+        FROM
+            orders
+        """,
+        engine=engine,
+    )
+    return
+
+
+@app.cell
+def _(engine, mo, orders):
+    _df = mo.sql(
+        f"""
+        SELECT
             order_id,
             customer_id,
             order_purchase_timestamp,
@@ -215,16 +239,16 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-    - Charger la table `order_items`
-    - Selectionner colonnes `seller_id` et `price`
-    - Calculer la somme de `price_id` et renommer en chiffre d'affaire
-    - Grouper par `seller_id`
-    - Conserver les lignes dont chiffres d'affaires supérieurs à 100 000
-    - Classer les chiffres d'affaires par ordre croissant
+    - ~~Charger la table `order_items`~~ ✅
+    - ~~Selectionner colonnes `seller_id` et `price`~~ ✅
+    - ~~Calculer la somme de `price_id` et renommer en chiffre d'affaire~~ ✅
+    - ~~Grouper par `seller_id`~~ ✅
+    - ~~Conserver les lignes dont chiffres d'affaires supérieurs à 100 000~~ ✅
+    - ~~Classer les chiffres d'affaires par ordre croissant~~ ✅
     """
     )
     return
@@ -299,11 +323,14 @@ def _(engine, mo, order_items, orders):
         f"""
         SELECT
             order_items.seller_id,
+            orders.order_id,
             MIN(orders.order_purchase_timestamp) AS premiere_vente,
             COUNT(order_items.product_id) AS nombre_produits_vendus
         FROM
-            order_items
-            JOIN orders ON order_items.order_id = orders.order_id
+            order_items,
+            orders
+        WHERE
+            order_items.order_id = orders.order_id
         GROUP BY
             order_items.seller_id
         HAVING
@@ -317,8 +344,38 @@ def _(engine, mo, order_items, orders):
                 '-3 months'
             )
             AND COUNT(order_items.product_id) > 30
+        ORDER BY
+            premiere_vente DESC
         """,
-        engine=engine
+        engine=engine,
+    )
+    return
+
+
+@app.cell
+def _(engine, mo, orders):
+    _df = mo.sql(
+        f"""
+        SELECT
+            *
+        FROM
+            orders
+        """,
+        engine=engine,
+    )
+    return
+
+
+@app.cell
+def _(engine, mo, order_items):
+    _df = mo.sql(
+        f"""
+        SELECT
+            *
+        FROM
+            order_items
+        """,
+        engine=engine,
     )
     return
 
@@ -337,6 +394,60 @@ def _(mo):
 
     **Quels sont les 5 codes postaux, enregistrant plus de 30 reviews, avec le pire review score moyen sur les 12 derniers mois ?**
     """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    - ~~Zip code de customer `customer_zip_code_preview`~~✅
+    - ~~collecter les review des 12 derniers mois~~✅
+    - ~~Aggréger le nombre de review (COUNT)~~✅
+    - ~~filtrer pour conserver nb review > 30~~ ✅
+    - ~~calculer la moyenne des review~~✅
+    - ~~Conserver les 5 derniers code postaux (LIMIT)~~✅
+    - ~~Trier les notes par ordre croissant~~✅
+    """
+    )
+    return
+
+
+@app.cell
+def _(customers, engine, mo, order_reviews, orders):
+    _df = mo.sql(
+        f"""
+        SELECT
+            customers.customer_zip_code_prefix AS code_postal,
+            AVG(order_reviews.review_score) AS note_moyenne,
+            COUNT(order_reviews.review_score) AS nombre_commentaires
+        FROM
+            customers,
+            order_reviews,
+            orders
+        WHERE
+            order_reviews.order_id = orders.order_id
+            AND customers.customer_id = orders.customer_id
+            AND order_reviews.review_creation_date >= DATE(
+                (
+                    SELECT
+                        MAX(review_creation_date)
+                    FROM
+                        order_reviews
+                ),
+                "-12 months"
+            )
+        GROUP BY
+            code_postal
+        HAVING
+            nombre_commentaires > 30
+        ORDER BY
+            note_moyenne ASC
+        LIMIT
+            5
+        """,
+        engine=engine,
     )
     return
 
