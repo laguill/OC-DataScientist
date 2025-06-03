@@ -1,13 +1,16 @@
 import marimo
 
-__generated_with = "0.13.11"
-app = marimo.App(width="medium", sql_output="pandas")
+__generated_with = "0.13.15"
+app = marimo.App(
+    width="medium",
+    app_title="P5 Exploration",
+    sql_output="pandas",
+)
 
 
 @app.cell
 def _():
     import marimo as mo
-
     return (mo,)
 
 
@@ -62,15 +65,15 @@ def _(mo):
     - Une présentation pour un collègue afin d’obtenir ses retours sur votre approche
 
     ⚠️ Pour information, le code fourni doit respecter la convention PEP8, pour être utilisable par Olist.
-    Ce qui signifie : 
+    Ce qui signifie :
 
     - Respecter une indentation de 4 espaces
-    - Les lignes de code ne dépassent pas 79 characteres
-    - Les imports sont décalarés au début du script
+    - Les lignes de code ne dépassent pas 79 caractères
+    - Les imports sont déclarés au début du script
     - Les commentaires sont rédigés en anglais
 
-    La liste des règles est non exaustive. Pour me faciliter la tâche, j'utilie le linter ruff.
-    """
+    La liste des règles est non exhaustive. Pour me faciliter la tâche, j’utilise le linter ruff.
+    """  # noqa: RUF001
     )
     return
 
@@ -123,8 +126,9 @@ def _():
 
     from ydata_profiling import ProfileReport
 
-    # Chargement de seaborn
+    # load seaborn
     sns.set_theme()
+    # sns.set(font_scale=1.2)
     return Path, ProfileReport, np, pd, plt, px, sns, sqlalchemy
 
 
@@ -146,7 +150,7 @@ def _(sqlalchemy):
 def _(engine, mo, sqlite_master):
     # Stocking table list in a variable for further use
     tables_df = mo.sql(
-        f"""
+        """
         SELECT name FROM sqlite_master
         WHERE type='table'
         """,
@@ -157,14 +161,14 @@ def _(engine, mo, sqlite_master):
     return (tables_list,)
 
 
-@app.cell
+@app.cell(disabled=True)
 def _(engine, mo, tables_list):
     # Dict to store tables dataframes
     dataframes = {}
 
     # Store each tables in a dataframe
     for _table in tables_list:
-        query = f"SELECT * FROM '{_table}'"
+        query = f"SELECT * FROM '{_table}'"  # noqa: S608
         dataframes[_table] = mo.sql(
             query,
             output=False,
@@ -213,16 +217,113 @@ def _(mo):
     L'analyse exploratoires des tables de la base données me permet pour le moment d'obtenir ces informations: 
 
     - 9 tables dans la base de données
-    - 99 441 clients (**customers**)
-        - pas de doublons
+    - 99 441 commandes (table **customers**)
+        - pas de doublons dans les commandes (customer_id)
         - pas de valeurs manquantes
+        - customer_unique_id = 96096. Des clients ont repassé commande sur la plateforme
+        - présence de doublons dans customer_unique_id
+        - Un client à commandé 17 fois sur la plateforme
     - types de payments
         - **orders_pymts**
         - 5 types (card debit/credit, voucher, etc...)
+        - Pour une même commande différents mode de paiment peuvent être utilisés (penser à faire la somme pour avoir le montant exact d'une commande)
     - tables **orders**
         - delivered_carrier_date
         - delivered_customer_date
     """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""### Table customers""")
+    return
+
+
+@app.cell
+def _(customers, engine, mo):
+    _df = mo.sql(
+        f"""
+        WITH duplicate_ids AS (
+            SELECT customer_unique_id
+            FROM customers
+            GROUP BY customer_unique_id
+            HAVING COUNT(*) > 1
+        )
+        SELECT c.*
+        FROM customers c
+        JOIN duplicate_ids d ON c.customer_unique_id = d.customer_unique_id
+        ORDER BY c.customer_unique_id;
+        """,
+        engine=engine
+    )
+    return
+
+
+@app.cell
+def _(customers, engine, mo):
+    _df = mo.sql(
+        f"""
+        -- get number of time a customer used Olist
+        SELECT
+            customer_unique_id,
+            COUNT(*) as count
+        FROM
+            customers
+        GROUP BY
+            customer_unique_id
+        HAVING
+            COUNT(*) > 1
+        ORDER BY
+            count DESC
+        LIMIT
+            5
+        """,
+        engine=engine
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""### Table order_pymts""")
+    return
+
+
+@app.cell
+def _(engine, mo, order_pymts):
+    _df = mo.sql(
+        f"""
+        WITH
+            duplicate_orders AS (
+                SELECT
+                    order_id
+                FROM
+                    order_pymts
+                GROUP BY
+                    order_id
+                HAVING
+                    COUNT(*) > 1
+            )
+        SELECT
+            o.*
+        FROM
+            order_pymts o
+        WHERE
+            o.order_id IN (
+                SELECT
+                    order_id
+                FROM
+                    duplicate_orders
+            )
+        ORDER BY
+            o.order_id,
+            payment_sequential
+        LIMIT
+            15
+        """,
+        engine=engine
     )
     return
 
@@ -248,7 +349,7 @@ def _(mo):
     - **Commandes des 6 derniers mois** : Concentre l'analyse sur les données récentes.
     - **Clients avec 3 mois d’ancienneté ou plus** : Permet de cibler les clients fidèles.
     - **Recency dans RFM** : Mesure la récence des commandes pour chaque client.
-    """
+    """  # noqa: RUF001
     )
     return
 
@@ -263,19 +364,44 @@ def _(mo):
 def _(engine, mo, orders):
     # Store last order date in a variable
     last_order_date_df = mo.sql(
-        f"""
-        WITH LastOrderDate AS (
-            SELECT MAX(order_purchase_timestamp) AS last_order_date
-            FROM orders
-        )
-        SELECT last_order_date
-        FROM LastOrderDate;
-
+        """
+        WITH
+            LastOrderDate AS (
+                SELECT
+                    MAX(order_purchase_timestamp) AS last_order_date
+                FROM
+                    orders
+            )
+        SELECT
+            last_order_date
+        FROM
+            LastOrderDate
         """,
         engine=engine,
     )
     last_order_date = last_order_date_df.iloc[0, 0]
     return (last_order_date,)
+
+
+@app.cell
+def _(engine, mo, orders):
+    _df = mo.sql(
+        f"""
+        WITH
+            LastOrderDate AS (
+                SELECT
+                    MAX(order_purchase_timestamp) AS last_order_date
+                FROM
+                    orders
+            )
+        SELECT
+            last_order_date
+        FROM
+            LastOrderDate
+        """,
+        engine=engine
+    )
+    return
 
 
 @app.cell(hide_code=True)
@@ -304,7 +430,46 @@ def _(engine, last_order_date, mo):
         """,
         engine=engine
     )
-    return (last_6_month_orders_df,)
+    return
+
+
+@app.cell
+def _(engine, mo):
+    _df = mo.sql(
+        f"""
+        WITH
+            -- get last order date
+            LastOrderDate AS (
+                SELECT
+                    MAX(order_purchase_timestamp) AS last_order_date
+                FROM
+                    orders
+            ),
+            -- get last 6 month orders
+            Last6MonthOrders AS (
+                SELECT
+                    *
+                FROM
+                    orders
+                WHERE
+                    order_purchase_timestamp >= DATE(
+                        (
+                            SELECT
+                                *
+                            FROM
+                                LastOrderDate
+                        ),
+                        "-6 months"
+                    )
+            )
+        SELECT
+            *
+        FROM
+            Last6MonthOrders
+        """,
+        engine=engine
+    )
+    return
 
 
 @app.cell(hide_code=True)
@@ -314,22 +479,67 @@ def _(mo):
 
 
 @app.cell
-def _(last_6_month_orders_df, last_order_date, mo):
+def _(engine, mo):
     oldest_client_df = mo.sql(
         f"""
+        WITH
+            -- get last order date
+            LastOrderDate AS (
+                SELECT
+                    MAX(order_purchase_timestamp) AS last_order_date
+                FROM
+                    orders
+            )
+
         SELECT
-            customer_id,
-            MIN(order_purchase_timestamp) as date_inscription
+            c.customer_unique_id,
+            o.customer_id,
+            MIN(o.order_purchase_timestamp) as date_inscription
         FROM
-            last_6_month_orders_df
+            orders AS o
+        JOIN
+            customers AS c ON o.customer_id = c.customer_id
         GROUP BY
-            customer_id
+            c.customer_unique_id
         HAVING
-            DATE(date_inscription) <= DATE(DATE('{last_order_date}') - INTERVAL 3 MONTH)
+            date_inscription <= DATE(
+                (
+                    SELECT
+                        last_order_date
+                    FROM
+                        LastOrderDate
+                ),
+                "-3 months"
+            )
         ORDER BY
             date_inscription DESC
-        """
+        """,
+        engine=engine
     )
+    return (oldest_client_df,)
+
+
+@app.cell
+def _(oldest_client_df, pd, plt, sns):
+    oldest_client_df["date_inscription"] = pd.to_datetime(oldest_client_df["date_inscription"])
+
+    # Extract year and month from signin date
+    oldest_client_df["year_month"] = oldest_client_df["date_inscription"].dt.to_period("M")
+
+    # Count number of client per mont/year
+    aggregated_data = oldest_client_df["year_month"].value_counts().sort_index()
+
+    # Create a new dataframe
+    aggregated_df = aggregated_data.reset_index()
+    aggregated_df.columns = ["year_month", "count"]
+
+    # display plot
+    sns.barplot(x="year_month", y="count", data=aggregated_df)
+    plt.xticks(rotation=45)
+    plt.title("Nombre de clients par mois et année d'inscription")
+    plt.xlabel("Mois et Année d'inscription")
+    plt.ylabel("Nombre de clients")
+    plt.show()
     return
 
 
@@ -343,37 +553,118 @@ def _(mo):
     - **Fréquence** : Nombre total d'achats effectués par le client.
     - **Montant** : Valeur totale dépensée par le client.
 
-    J'ai besoin: 
+    J'ai besoin:
 
-    - Date du dernier achat par client (**orders**).
-    - Compter le nombre de commande par client.
-    - Du montant moyen des commandes passés par les clients (**order_pymts**).
+    - **Date de la dernière commande** : Utilisation d'une CTE sur la table **orders** avec la colonne **order_purchase_timestamp**.
+    - **Recency** : Calcul des jours depuis la dernière commande pour chaque client, utilisant les tables **orders** et customers avec les colonnes **customer_unique_id** et **order_purchase_timestamp**.
+    - **Frequency** : Calcul du nombre total de commandes par client, utilisant les tables **orders** et **customers** avec les colonnes **customer_unique_id** et **order_id**.
+    - **Monetary** : Calcul du montant total dépensé par chaque client, utilisant les tables **orders**, **customers**, et **order_pymts** avec les colonnes **customer_unique_id**, **order_id**, et **payment_value**.
+    - **Combinaison des résultats** : Fusion des CTEs pour obtenir le tableau RFM trié par fréquence décroissante, utilisant **customer_unique_id**, **recency**, **frequency**, et **monetary**.
+
+    J'itère en écrivant d'abord séparement les requêtes pour ensuite les fusionner dans une requête finale.
     """
     )
     return
 
 
 @app.cell
-def _(engine, last_order_date, mo, order_pymts, orders):
+def _(customers, engine, mo):
+    _df = mo.sql(
+        f"""
+        -- Get total number of orders per client
+        WITH frequence AS (
+            SELECT
+                customer_unique_id,
+                COUNT(*) AS total_orders
+            FROM
+                customers
+            GROUP BY
+                customer_unique_id
+        )
+
+        -- Join result to original table
+        SELECT
+            c.customer_unique_id,
+            f.total_orders
+        FROM
+            customers c
+        JOIN
+            frequence AS f
+        ON
+            c.customer_unique_id = f.customer_unique_id;
+        """,
+        engine=engine
+    )
+    return
+
+
+@app.cell
+def _(customers, engine, mo, order_pymts, orders):
     rfm_df = mo.sql(
         f"""
-        -- new dataframe to analyze RFM segmentation
+        WITH
+            -- get last order date
+            LastOrderDate AS (
+                SELECT
+                    MAX(order_purchase_timestamp) AS last_order_date
+                FROM
+                    orders
+            ),
+            -- Calculate recency (nombre de jours depuis le dernier achat)
+            Recency AS (
+                SELECT
+                    c.customer_unique_id,
+                    ROUND(
+                        JULIANDAY (
+                            (
+                                SELECT
+                                    last_order_date
+                                FROM
+                                    LastOrderDate
+                            )
+                        ) - JULIANDAY (MAX(o.order_purchase_timestamp))
+                    ) AS recency
+                FROM
+                    orders o
+                    JOIN customers c ON o.customer_id = c.customer_id
+                GROUP BY
+                    c.customer_unique_id
+            ),
+            -- Calculate frequency (nombre total de commandes)
+            Frequency AS (
+                SELECT
+                    c.customer_unique_id,
+                    COUNT(o.order_id) AS frequency
+                FROM
+                    orders o
+                    JOIN customers c ON o.customer_id = c.customer_id
+                GROUP BY
+                    c.customer_unique_id
+            ),
+            -- Calculate monetary (montant total dépensé)
+            Monetary AS (
+                SELECT
+                    c.customer_unique_id,
+                    SUM(op.payment_value) AS monetary
+                FROM
+                    orders o
+                    JOIN customers c ON o.customer_id = c.customer_id
+                    JOIN order_pymts op ON o.order_id = op.order_id
+                GROUP BY
+                    c.customer_unique_id
+            )
+            -- Combine results of CTEs to get RFM's table
         SELECT
-            o.customer_id,
-            ROUND(
-                JULIANDAY ('{last_order_date}') - JULIANDAY (o.order_purchase_timestamp)
-            ) AS recence,
-            COUNT(o.customer_id) AS frequence,
-            AVG(p.payment_value) as montant_moyen
+            r.customer_unique_id,
+            r.recency,
+            f.frequency,
+            m.monetary
         FROM
-            orders AS o,
-            order_pymts AS p
-        WHERE
-            o.order_id = p.order_id
-        GROUP BY
-            customer_id
+            Recency r
+            JOIN Frequency f ON r.customer_unique_id = f.customer_unique_id
+            JOIN Monetary m ON r.customer_unique_id = m.customer_unique_id
         ORDER BY
-            recence ASC
+            f.frequency DESC
         """,
         engine=engine
     )
@@ -400,12 +691,11 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(pd):
     def feature_analysis(dataframe, feature):
-        """
-        Analyse statistique d'une colonne numérique d'un DataFrame.
-        """
+        """Analyse statistique d'une colonne numérique d'un DataFrame."""
         # Check if the feature exists in the dataframe
         if feature not in dataframe.columns:
-            raise ValueError(f"La colonne '{feature}' n'existe pas dans le dataframe.")
+            msg = f"La colonne '{feature}' n'existe pas dans le dataframe."
+            raise ValueError(msg)
         # Check if the feature is numeric, otherwise we can't get the statistics
         if not pd.api.types.is_numeric_dtype(dataframe[feature]):
             return f"La colonne '{feature}' doit contenir des données numériques."
@@ -424,15 +714,13 @@ def _(pd):
         }
 
         # Convert the list to DataFrame
-        df_statistiques = pd.DataFrame.from_dict(statistics, orient="index", columns=["Value"])
-        return df_statistiques
-
+        return pd.DataFrame.from_dict(statistics, orient="index", columns=["Value"])
     return (feature_analysis,)
 
 
 @app.cell
 def _(feature_analysis, rfm_df):
-    feature_analysis(rfm_df, "recence")
+    feature_analysis(rfm_df, "recency")
     return
 
 
@@ -446,7 +734,7 @@ def _(sns):
 @app.cell(hide_code=True)
 def _(colors, plt, rfm_df, sns):
     # Sélectionner la feature
-    _feature = "recence"
+    _feature = "recency"
     _sub_df = rfm_df[_feature]
     _color = colors[0]
 
@@ -498,14 +786,14 @@ def _(mo):
 
 @app.cell
 def _(feature_analysis, rfm_df):
-    feature_analysis(rfm_df, "frequence")
+    feature_analysis(rfm_df, "frequency")
     return
 
 
 @app.cell(hide_code=True)
 def _(colors, plt, rfm_df, sns):
     # Sélectionner la feature
-    _feature = "frequence"
+    _feature = "frequency"
     _sub_df = rfm_df[_feature]
     _color = colors[1]
 
@@ -553,7 +841,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo, rfm_df):
     # Get total number of customer that ordered more than once
-    _clients_plusieurs_commandes = rfm_df.query("frequence > 1").shape[0]
+    _clients_plusieurs_commandes = rfm_df.query("frequency > 1").shape[0]
 
     # Get total number of customer
     _total_clients = rfm_df.shape[0]
@@ -568,9 +856,9 @@ def _(mo, rfm_df):
 @app.cell
 def _(np, rfm_df, sns):
     # log transform to minimize importance of high values
-    rfm_df["log_frequence"] = np.log(rfm_df["frequence"] + 1)
+    rfm_df["log_frequency"] = np.log(rfm_df["frequency"] + 1)
 
-    sns.histplot(rfm_df["log_frequence"], bins=15)
+    sns.histplot(rfm_df["log_frequency"], bins=17)
     return
 
 
@@ -582,14 +870,14 @@ def _(mo):
 
 @app.cell
 def _(feature_analysis, rfm_df):
-    feature_analysis(rfm_df, "montant_moyen")
+    feature_analysis(rfm_df, "monetary")
     return
 
 
 @app.cell(hide_code=True)
 def _(colors, plt, rfm_df, sns):
     # Sélectionner la feature
-    _feature = "montant_moyen"
+    _feature = "monetary"
     _sub_df = rfm_df[_feature]
     _color = colors[2]
 
@@ -637,10 +925,10 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(np, plt, rfm_df, sns):
     # log transform to minimize importance of high values
-    rfm_df["log_montant"] = np.log(rfm_df["montant_moyen"] + 1)
+    rfm_df["log_monetary"] = np.log(rfm_df["monetary"] + 1)
 
-    sns.histplot(rfm_df["log_montant"], bins=15)
-    plt.title("Montant moyen par commande (log)")
+    sns.histplot(rfm_df["log_monetary"], bins=15)
+    plt.title("Montant total dépensé par client (log)")
     return
 
 
@@ -657,29 +945,50 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(engine, mo, order_reviews, orders):
-    order_review_df = mo.sql(
+def _(customers, engine, mo, order_reviews, orders):
+    avg_review_df = mo.sql(
         f"""
-        -- get a dataframe to highlight order_review avg per customer
+        WITH OrderCustomer AS (
+            -- Join btwn orders and customers to get customer_unique_id et order_id
+            SELECT
+                o.order_id,
+                c.customer_unique_id
+            FROM
+                orders o
+            JOIN
+                customers c ON o.customer_id = c.customer_id
+        ),
+
+        ReviewScores AS (
+            -- Join with order_reviews to get review_score
+            SELECT
+                oc.customer_unique_id,
+                orv.review_score
+            FROM
+                OrderCustomer oc
+            JOIN
+                order_reviews orv ON oc.order_id = orv.order_id
+        )
+
+        -- Calculate avg review score per customer_unique_id
+        -- Also get count of reviews per customer_unique_id
         SELECT
-            o.customer_id,
-            ROUND(AVG (orev.review_score)) AS Note_Moyenne
+            customer_unique_id,
+            ROUND(AVG(review_score)) AS average_review_score,
+            COUNT(review_score) AS nb_reviews
         FROM
-            order_reviews AS orev,
-            orders AS o
-        WHERE
-            o.order_id = orev.order_id
+            ReviewScores
         GROUP BY
-            o.customer_id
+            customer_unique_id;
         """,
         engine=engine
     )
-    return (order_review_df,)
+    return (avg_review_df,)
 
 
-@app.cell
-def _(np, order_review_df, plt, sns):
-    sns.histplot(order_review_df["Note_Moyenne"], discrete=True, stat="probability", cumulative=True)
+@app.cell(hide_code=True)
+def _(avg_review_df, np, plt, sns):
+    sns.histplot(avg_review_df["average_review_score"], discrete=True, stat="probability", cumulative=True)
     plt.xticks(np.arange(1, 6, 1))
     plt.title("Note moyenne de statisfaction par client")
     return
@@ -687,7 +996,13 @@ def _(np, order_review_df, plt, sns):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Presque **80%** des clients de Olist ont donnée une note de 4 ou 5 lors de l'enquête de satisfaction.""")
+    mo.md(
+        r"""
+    Presque **80%** des clients de Olist ont donnée une note de 4 ou 5 lors de l'enquête de satisfaction.
+
+    Les clients sont satisfait de la plateforme.
+    """
+    )
     return
 
 
@@ -754,7 +1069,103 @@ def _(geoloc_df, px):
 
 @app.cell(hide_code=True)
 def _(mo):
+    mo.md(
+        r"""
+    La majorité des colis sont expédiés au Brésil.
+
+    Certains clients se trouvent également au Portugal et au Cap Vert.
+
+    Je pense que l'information du customer_zip_code_prfix peut être intéressante pour segmenter les clients de Olist.
+
+    J'utiliserai l'information de la table customers.
+    """
+    )
+    return
+
+
+@app.cell
+def _(customers, engine, mo, orders):
+    customer_zip_code_df = mo.sql(
+        f"""
+        -- get latest order for each customer
+        WITH LatestOrder AS (
+            SELECT
+                c.customer_unique_id,
+                c.customer_zip_code_prefix,
+                MAX(o.order_purchase_timestamp) as latest_order_timestamp
+            FROM
+                customers c
+            JOIN
+                orders o ON c.customer_id = o.customer_id
+            GROUP BY
+                c.customer_unique_id
+        )
+
+        -- filter latest order table to get only customer_unique_id and customer_zip_code_prefix
+        SELECT
+            customer_unique_id,
+            customer_zip_code_prefix AS zip_code
+        FROM
+            LatestOrder;
+        """,
+        engine=engine
+    )
+    return (customer_zip_code_df,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
     mo.md(r"""## Fusion des jeux de données et exportation""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    L'exploration de la base de donnée m'a permis d'identifier des caractéristiques clients qui me semblent utile pour segmenter les clients de Olist.
+
+    - **Comportements**
+        - recency
+        - frequency
+        - monetary
+        - log(frequency)
+        - log(monetary)
+
+    - **Satisfaction**
+        - nb_reviews
+        - average_review_score
+
+    - **Geographie**
+        - zip_code
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""Je fusionne les dataframes pandas avant de les enregistrer dans une base de données""")
+    return
+
+
+@app.cell
+def _(avg_review_df, customer_zip_code_df, pd, rfm_df):
+    # Merge btwn rfm_df and avg_review_df
+    temp_df = pd.merge(rfm_df, customer_zip_code_df, on="customer_unique_id", how="left")
+
+    # Second merge btwn previous result and avg_review_df
+    db_finale = pd.merge(temp_df, avg_review_df, on="customer_unique_id", how="left")
+
+    # display final df
+    db_finale
+    return (db_finale,)
+
+
+@app.cell
+def _(db_finale):
+    # Save df to csv for latter use
+    db_finale.to_csv("data/processed/finale_df.csv")
     return
 
 

@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium", app_title="P5 Requetes Dashboard")
 
 
@@ -110,7 +110,7 @@ def _(engine, mo, sqlite_master):
         f"""
         SELECT * FROM sqlite_master WHERE type='table'
         """,
-        engine=engine,
+        engine=engine
     )
     return
 
@@ -175,13 +175,13 @@ def _(engine, mo, orders):
         FROM
             orders
         """,
-        engine=engine,
+        engine=engine
     )
     return
 
 
 @app.cell
-def _(engine, mo, orders):
+def _(engine, mo):
     _df = mo.sql(
         f"""
         SELECT
@@ -189,13 +189,13 @@ def _(engine, mo, orders):
         FROM
             orders
         """,
-        engine=engine,
+        engine=engine
     )
     return
 
 
 @app.cell
-def _(engine, mo, orders):
+def _(engine, mo):
     _df = mo.sql(
         f"""
         SELECT
@@ -217,7 +217,7 @@ def _(engine, mo, orders):
         ORDER BY
             retard_livraison DESC;
         """,
-        engine=engine,
+        engine=engine
     )
     return
 
@@ -244,6 +244,7 @@ def _(mo):
     mo.md(
         r"""
     - ~~Charger la table `order_items`~~ ✅
+    - ~~Fusionner avec la table order pour récupérer les produits livrés `order`~~ ✅
     - ~~Selectionner colonnes `seller_id` et `price`~~ ✅
     - ~~Calculer la somme de `price_id` et renommer en chiffre d'affaire~~ ✅
     - ~~Grouper par `seller_id`~~ ✅
@@ -255,33 +256,45 @@ def _(mo):
 
 
 @app.cell
-def _(engine, mo, order_items):
+def _(engine, mo, order_items, orders):
     _df = mo.sql(
         f"""
+        WITH
+            orders_joined as (
+                SELECT
+                    i.seller_id,
+                    i.order_id,
+                    i.price,
+                    o.order_purchase_timestamp
+                FROM
+                    order_items as i
+                    INNER JOIN orders as o ON o.order_id = i.order_id
+                WHERE
+                    o.order_status = 'delivered'
+                ORDER BY
+                    seller_id,
+                    order_purchase_timestamp
+            ),
+            aggregation AS (
+                SELECT
+                    seller_id,
+                    sum(price) AS total_amount_sold,
+                    count(order_id) AS total_items_sold
+                FROM
+                    orders_joined
+                GROUP BY
+                    seller_id
+            )
         SELECT
-            seller_id,
-            SUM(price) AS chiffre_affaire
+            *
         FROM
-            order_items
-        GROUP BY
-            seller_id
-        HAVING
-            chiffre_affaire > 100000
+            aggregation
+        WHERE
+            total_amount_sold > 100000
         ORDER BY
-            chiffre_affaire DESC
+            total_amount_sold DESC
         """,
-        engine=engine,
-    )
-    return
-
-
-@app.cell
-def _(engine, mo, sqlite_master):
-    _df = mo.sql(
-        f"""
-        SELECT * FROM sqlite_master WHERE type='table'
-        """,
-        engine=engine,
+        engine=engine
     )
     return
 
@@ -318,7 +331,7 @@ def _(mo):
 
 
 @app.cell
-def _(engine, mo, order_items, orders):
+def _(engine, mo):
     _df = mo.sql(
         f"""
         SELECT
@@ -347,35 +360,7 @@ def _(engine, mo, order_items, orders):
         ORDER BY
             premiere_vente DESC
         """,
-        engine=engine,
-    )
-    return
-
-
-@app.cell
-def _(engine, mo, orders):
-    _df = mo.sql(
-        f"""
-        SELECT
-            *
-        FROM
-            orders
-        """,
-        engine=engine,
-    )
-    return
-
-
-@app.cell
-def _(engine, mo, order_items):
-    _df = mo.sql(
-        f"""
-        SELECT
-            *
-        FROM
-            order_items
-        """,
-        engine=engine,
+        engine=engine
     )
     return
 
@@ -398,7 +383,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -415,39 +400,63 @@ def _(mo):
 
 
 @app.cell
-def _(customers, engine, mo, order_reviews, orders):
+def _(engine, mo):
     _df = mo.sql(
         f"""
-        SELECT
-            customers.customer_zip_code_prefix AS code_postal,
-            AVG(order_reviews.review_score) AS note_moyenne,
-            COUNT(order_reviews.review_score) AS nombre_commentaires
-        FROM
-            customers,
-            order_reviews,
-            orders
-        WHERE
-            order_reviews.order_id = orders.order_id
-            AND customers.customer_id = orders.customer_id
-            AND order_reviews.review_creation_date >= DATE(
-                (
-                    SELECT
-                        MAX(review_creation_date)
-                    FROM
-                        order_reviews
-                ),
-                "-12 months"
+        WITH
+            -- get last order date
+            LastOrderDate AS (
+                SELECT
+                    MAX(order_purchase_timestamp) AS last_order_date
+                FROM
+                    orders
+            ),
+            -- get the zip codes where orders were sent
+            join_orders_geoloc AS (
+                SELECT
+                    o.order_id,
+                    o.order_purchase_timestamp,
+                    c.customer_zip_code_prefix
+                FROM
+                    orders AS o
+                    JOIN customers AS c ON o.customer_id = c.customer_id
+            ),
+            -- merge CTE's to get avg review score and nb of review per zip code
+            average_review_score_per_zip AS (
+                SELECT
+                    customer_zip_code_prefix,
+                    AVG(review_score) AS avg_review_score,
+                    COUNT(review_score) AS nb_reviews
+                FROM
+                    order_reviews AS r
+                    JOIN join_orders_geoloc AS o ON r.order_id = o.order_id
+                WHERE
+                    order_purchase_timestamp >= DATE(
+                        (
+                            SELECT
+                                *
+                            FROM
+                                LastOrderDate
+                        ),
+                        "-12 months"
+                    )
+                GROUP BY
+                    customer_zip_code_prefix
             )
-        GROUP BY
-            code_postal
-        HAVING
-            nombre_commentaires > 30
+            -- Filter only zip code with at least 30 reviews
+            -- Also Filter to get only top 
+        SELECT
+            *
+        FROM
+            average_review_score_per_zip
+        WHERE
+            nb_reviews > 30
         ORDER BY
-            note_moyenne ASC
+            avg_review_score
         LIMIT
             5
         """,
-        engine=engine,
+        engine=engine
     )
     return
 

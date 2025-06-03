@@ -12,11 +12,24 @@ from xml.etree.ElementTree import Element
 
 import marimo
 from marimo import MarimoIslandGenerator
-from marimo._cli.convert.markdown import (
-    MARIMO_MD,
-    MarimoParser,
-    SafeWrap,
-)
+
+try:
+    from marimo._ast.app import App
+    from marimo._convert.markdown.markdown import (
+        MARIMO_MD,
+        MarimoMdParser as MarimoParser,
+        SafeWrap as SafeWrapGeneric,
+    )
+
+    SafeWrap = SafeWrapGeneric[App]
+except ImportError:
+    # Fallback for marimo < 0.13.16
+    from marimo._cli.convert.markdown import (  # type: ignore[import, no-redef]
+        MARIMO_MD,
+        MarimoParser,
+        SafeWrap,
+    )
+
 from marimo._islands import MarimoIslandStub
 
 __version__ = "0.0.1"
@@ -72,13 +85,17 @@ def get_mime_render(
         "reactive": config["eval"] and not mime_sensitive,
         "code": stub.code,
     }
+
     if output:
+        mimetype = output.mimetype
         if config["output"] and mime_sensitive:
-            if output.mimetype.startswith("image"):
+            if mimetype.startswith("image"):
                 return {"type": "figure", "value": f"{output.data}", **render_options}
-            if output.mimetype.startswith("text/plain"):
+            if mimetype.startswith("text/plain") or mimetype.startswith(
+                "text/markdown"
+            ):
                 return {"type": "para", "value": f"{output.data}", **render_options}
-            if output.mimetype == "application/vnd.marimo+error":
+            if mimetype == "application/vnd.marimo+error":
                 if config["error"]:
                     return {
                         "type": "blockquote",
@@ -88,7 +105,7 @@ def get_mime_render(
                 # Suppress errors otherwise
                 return {"type": "para", "value": "", **render_options}
 
-        elif output.mimetype == "application/vnd.marimo+error":
+        elif mimetype == "application/vnd.marimo+error":
             if config["warning"]:
                 sys.stderr.write(
                     "Warning: Only the `disabled` codeblock attribute is utilized"
@@ -105,6 +122,7 @@ def get_mime_render(
             display_code=config["echo"],
             display_output=config["output"],
             is_reactive=bool(render_options["reactive"]),
+            as_raw=mime_sensitive,
         ),
         **render_options,
     }
@@ -191,6 +209,7 @@ def build_export_with_mime_context(
 class MarimoPandocParser(MarimoParser):
     """Parses Markdown to marimo notebook string."""
 
+    # TODO: Could upstream generic for keys- but this is fine.
     output_formats = {  # type: ignore[assignment, misc]
         "marimo-pandoc-export": build_export_with_mime_context(mime_sensitive=False),  # type: ignore[dict-item]
         "marimo-pandoc-export-with-mime": build_export_with_mime_context(
@@ -203,9 +222,9 @@ def convert_from_md_to_pandoc_export(text: str, mime_sensitive: bool) -> dict[st
     if not text:
         return {"header": "", "outputs": []}
     if mime_sensitive:
-        parser = MarimoPandocParser(output_format="marimo-pandoc-export-with-mime")
+        parser = MarimoPandocParser(output_format="marimo-pandoc-export-with-mime")  # type: ignore[arg-type]
     else:
-        parser = MarimoPandocParser(output_format="marimo-pandoc-export")
+        parser = MarimoPandocParser(output_format="marimo-pandoc-export")  # type: ignore[arg-type]
     return parser.convert(text)  # type: ignore[arg-type, return-value]
 
 
@@ -217,5 +236,8 @@ if __name__ == "__main__":
     if not file:
         with open(reference_file) as f:
             file = f.read()
-    conversion = convert_from_md_to_pandoc_export(file, mime_sensitive.lower() == "yes")
+    no_js = mime_sensitive.lower() == "yes"
+    os.environ["MARIMO_NO_JS"] = str(no_js).lower()
+
+    conversion = convert_from_md_to_pandoc_export(file, no_js)
     sys.stdout.write(json.dumps(conversion))

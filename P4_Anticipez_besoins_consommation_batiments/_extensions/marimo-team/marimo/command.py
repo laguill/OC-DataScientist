@@ -5,12 +5,27 @@ import sys
 import tempfile
 from textwrap import dedent
 
-from marimo._cli.sandbox import PyProjectReader, construct_uv_flags
+try:
+    from marimo._cli.sandbox import construct_uv_flags
+    from marimo._utils.inline_script_metadata import PyProjectReader
+except ImportError as e:
+    try:
+        from marimo._cli.sandbox import (  # type: ignore[attr-defined, no-redef]
+            PyProjectReader,
+            construct_uv_flags,
+        )
+    except ImportError:
+        from marimo import __version__
+
+        raise ImportError(
+            "Potential version incompatibility quartom-marimo requires marimo "
+            f">=0.13.3. marimo version {__version__} is detected. "
+        ) from e
 
 
 def extract_command(header: str) -> list[str]:
     if not header.startswith("#"):
-        header = "# " + "\n# ".join(header.splitlines())
+        header = "\n# ".join(["# /// script", *header.splitlines(), "///"])
     pyproject = PyProjectReader.from_script(header)
     with tempfile.NamedTemporaryFile(
         mode="w", delete=False, suffix=".txt"

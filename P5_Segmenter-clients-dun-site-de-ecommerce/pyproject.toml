@@ -4,13 +4,14 @@ name = "P5_Segmentez_des_clients_dun_site_e-commerce"
 version = "0.1.0"
 description = "Analyser et anticiper la consommation énergétique de bâtiments publiques"
 readme = "README.md"
-requires-python = "==3.12.10"
+requires-python = ">=3.12,<3.13"
 dependencies = [
   "marimo[recommended]>=0.13.8",
   "numpy>=2.1.3",
   "pandas>=2.2.3",
   "plotly>=6.0.1",
   "scikit-learn>=1.6.1",
+  "scipy>=1.15.3",
   "seaborn>=0.13.2",
   "shap>=0.47.2",
   "sqlalchemy>=2.0.41",
@@ -18,6 +19,7 @@ dependencies = [
   "uv-bump>=0.1.2",
   "watchdog>=6.0.0",
   "ydata-profiling[notebook]>=4.16.1",
+  "yellowbrick>=1.5",
 ]
 
 [dependency-groups]

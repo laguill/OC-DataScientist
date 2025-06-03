@@ -1,13 +1,12 @@
 import marimo
 
-__generated_with = "0.13.7"
+__generated_with = "0.13.15"
 app = marimo.App(app_title="P4 Exploration")
 
 
 @app.cell
 def _():
     import marimo as mo
-
     return (mo,)
 
 
@@ -120,7 +119,7 @@ def _():
 def _(mo):
     with mo.status.spinner("Importing libraries..."):
         from pathlib import Path
-
+    
         from itables import init_notebook_mode, show
 
         init_notebook_mode(all_interactive=True)
@@ -131,6 +130,8 @@ def _(mo):
         import plotly.io as pio
         import seaborn as sns
 
+        pio.renderers.default = "browser"
+    
         from IPython.display import Markdown
         from itables.widget import ITable
         from matplotlib import gridspec
@@ -141,18 +142,7 @@ def _(mo):
         tools.set_options()
 
         csv_file: Path = Path("data/raw/2016_Building_Energy_Benchmarking.csv")
-    return (
-        ITable,
-        ProfileReport,
-        csv_file,
-        gridspec,
-        np,
-        pd,
-        plt,
-        px,
-        sns,
-        tools,
-    )
+    return ProfileReport, csv_file, gridspec, np, pd, plt, px, sns, tools
 
 
 @app.cell(hide_code=True)
@@ -168,7 +158,7 @@ def _(mo):
 
 
 @app.cell
-def _(csv_file, pd):
+def _(csv_file: "Path", pd):
     full_data = pd.read_csv(csv_file, sep=",")
     return (full_data,)
 
@@ -347,7 +337,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(col_conservees, csv_file, pd):
+def _(col_conservees, csv_file: "Path", pd):
     data = pd.read_csv(csv_file, sep=",", usecols=col_conservees)
     return (data,)
 
@@ -419,14 +409,12 @@ def _(ProfileReport, data_1):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""`BuildingType` définie le type de propriété alors que `PrimaryPropertyType` définie son usage principale."""
-    )
+    mo.md(r"""`BuildingType` définie le type de propriété alors que `PrimaryPropertyType` définie son usage principale.""")
     return
 
 
 @app.cell(hide_code=True)
-def _(ITable, data_1):
+def _(data_1):
     # ITable(data_1["BuildingType"].unique(), "Mots dans BuildingType")
     data_1["BuildingType"].unique()
     return
@@ -487,7 +475,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(ITable, data_3):
+def _(data_3):
     # ITable(data_3.dtypes)
     data_3.dtypes
     return
@@ -507,9 +495,7 @@ def _(data_3):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""Pour faciliter la modélisation des données je convertie certaines caractéristiques en variables catégorielles."""
-    )
+    mo.md(r"""Pour faciliter la modélisation des données je convertie certaines caractéristiques en variables catégorielles.""")
     return
 
 
@@ -559,9 +545,7 @@ def _(data_4):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""Le jeu de données est fourni avec des champs de commentaires pour avertir sur la qualité des données ou sur la présence d'outlier."""
-    )
+    mo.md(r"""Le jeu de données est fourni avec des champs de commentaires pour avertir sur la qualité des données ou sur la présence d'outlier.""")
     return
 
 
@@ -694,7 +678,7 @@ def _(data_8, visualiser_valeurs_manquantes):
 
 
 @app.cell(hide_code=True)
-def _(ITable, data_8):
+def _(data_8):
     # ITable(data_8.isna().sum(), "Nb valeurs manquantes par colonne")
     data_8.isna().sum()
     return
@@ -817,9 +801,7 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""Je crée de nouvelles colonnes pour représenter les proportions d'énergies utilisées par bâtiment. Ainsi je pourrai comparer les bâtiment plus facilement."""
-    )
+    mo.md(r"""Je crée de nouvelles colonnes pour représenter les proportions d'énergies utilisées par bâtiment. Ainsi je pourrai comparer les bâtiment plus facilement.""")
     return
 
 
@@ -968,7 +950,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(ITable, data_12):
+def _(data_12):
     # ITable(data_12["Neighborhood"].groupby(data_12["Neighborhood"], observed=True).count().sort_values())
     data_12["Neighborhood"].groupby(data_12["Neighborhood"], observed=True).count().sort_values()
     return
@@ -1005,7 +987,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(ITable, data_12):
+def _(data_12):
     # ITable(data_12["Neighborhood"].groupby(data_12["Neighborhood"], observed=True).count().sort_values())
     data_12["Neighborhood"].groupby(data_12["Neighborhood"], observed=True).count().sort_values()
     return
@@ -1024,7 +1006,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(ITable, data_12):
+def _(data_12):
     # ITable(data_12["CouncilDistrictCode"].groupby(data_12["CouncilDistrictCode"], observed=True).count().sort_values())
     data_12["CouncilDistrictCode"].groupby(data_12["CouncilDistrictCode"], observed=True).count().sort_values()
     return
@@ -1089,7 +1071,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(ITable, data_13):
+def _(data_13):
     # ITable(data_13.query("PrimaryEnergySource == 'Steam'"))
     data_13.query("PrimaryEnergySource == 'Steam'")
     return
@@ -1270,9 +1252,7 @@ def _(data_16, np, px):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""`Parking_ratio` et `Building_ration` ont une corrélation négative parfaite de -1. Cela signifie que l'information est redondante. Afin d'éviter le bruit lors de l’entraînement je n'en conserve que une `Parking_ratio`."""
-    )
+    mo.md(r"""`Parking_ratio` et `Building_ration` ont une corrélation négative parfaite de -1. Cela signifie que l'information est redondante. Afin d'éviter le bruit lors de l’entraînement je n'en conserve que une `Parking_ratio`.""")
     return
 
 

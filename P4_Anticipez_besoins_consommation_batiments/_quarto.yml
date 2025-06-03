@@ -2,6 +2,11 @@ project:
   type: website
   output-dir: _output
   execute-dir: project
+  render:
+    - "*.qmd"
+    - "!soutenance"
+    - "!notebooks/__marimo__"
+    
   preview:
     port: 7669
     browser: false
@@ -30,7 +35,7 @@ repo-actions: [issue]
 sharing: [linkedin]
 
 website:
-  title: "Projet 4 - Anticipez les besoins en consommation de bâtiments"
+  title: "P4 Anticiper les besoins de consommations de bâtiments"
   page-navigation: true
   back-to-top-navigation: true
   reader-mode: true
@@ -41,24 +46,9 @@ website:
     left: |
       Powered by [{{< iconify simple-icons:quarto title="Quarto Logo" label="Quarto Logo" >}} Quarto](https://quarto.org).
     center: |
-      &copy; []{#current-year} Guillaume Lafon. {{< iconify octicon:heart-fill-16 title="Heart" label="Heart" >}}.
+      &copy; []{#current-year} Guillaume LAFON. {{< iconify octicon:heart-fill-16 title="Heart" label="Heart" >}}.
     right: |
       License: [CC BY NC SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0).
-
-  sidebar:
-    title: false
-    style: "docked"
-    search: true
-    background: "#f8f9fa"
-    id: projet4
-    contents:
-      - section: "Anticipez les besoins en consommation de bâtiments"
-        href: index.qmd
-        title: "Projet 4"
-        contents:
-          - href: notebooks/introduction.qmd
-          - href: notebooks/exploration.qmd
-          - href: notebooks/predictions_emissions.qmd
 
 format:
   html:
@@ -71,19 +61,10 @@ format:
 
     theme:
       light: flatly
-      dark: darkly 
+      dark: darkly
     embed-resources: false
     self_contained: false
     page-layout: full
-    # output-file: LAFON_Guillaume_web-page_012025.html
-    
-#   ipynb: 
-#      echo: true
-#   #   output-file: LAFON_Guillaume_notebook_012025.ipynb
-
-# ipynb-shell-interactivity: all
 
 render:
-  - "*.qmd"
- 
-
+  - "noteboooks/*.qmd"
