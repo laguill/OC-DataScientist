@@ -4,6 +4,7 @@ __generated_with = "0.13.15"
 app = marimo.App(
     width="medium",
     app_title="P5 Exploration",
+    auto_download=["ipynb", "html"],
     sql_output="pandas",
 )
 
