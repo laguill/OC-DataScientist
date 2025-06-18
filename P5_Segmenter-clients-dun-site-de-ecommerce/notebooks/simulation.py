@@ -1,12 +1,17 @@
 import marimo
 
 __generated_with = "0.13.15"
-app = marimo.App(width="medium")
+app = marimo.App(
+    width="medium",
+    app_title="P5 Simulation",
+    auto_download=["ipynb", "html"],
+)
 
 
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
@@ -37,13 +42,13 @@ def _(mo):
 
     J'ai ainsi catégorisé les clients en 5 groupes.
 
-    - Groupe 0: 12% des clients qui sont insatisfaits du service de Olist et ne recommenderont probablement pas (Frequency =1)
+    - Groupe 0: 12% des clients qui sont insatisfaits du service de Olist et ne recommanderont probablement pas (Frequency =1)
     - Groupe 1: 20% de clients qui dépensent plus que la moyenne mais ne sont pas fidélisés (Monetary > 200 et Frequency =1)
-    - Groupe 2: clients récurents (Frequency = 2) mais représentent moins de 1% de la totalité
+    - Groupe 2: clients récurrents (Frequency = 2) mais représentent moins de 1% de la totalité
     - Groupe 3: Anciens clients qui pourraient revenir car satisfait (review = 5)
     - Groupe 4: 30% des clients des clients sont nouveaux et dépensent peu (recency < 200 et monetary = 69€)
 
-    L'obejctif étant de cibler les groupes de clients par des campagnes marketing ciblées.
+    L'objectif étant de cibler les groupes de clients par des campagnes marketing ciblées.
     """
     )
     return
@@ -77,7 +82,7 @@ def _(mo):
     - ARI = 0 ➡️ segmentation complètement différentes
     - ARI = 0.5 ➡️ segmentation très mauvaise
 
-    Je me fixe un seuil de **0.8** en dessous duquel, le modèl de ML n'est plus adapté aux informations clients et des ajustements sont nécessaires.
+    Je me fixe un seuil de **0.8** en dessous duquel, le modèle de ML n'est plus adapté aux informations clients et des ajustements sont nécessaires.
     """
     )
     return
@@ -87,11 +92,11 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Afin d'évaluer la stabilité de ma segmentation client voici la méthodologie utilisée : 
+    Afin d'évaluer la stabilité de ma segmentation client voici la méthodologie utilisée :
 
     - Diviser la base de données en période de de 1 mois
     - Appliquer le clustering à chacune des périodes
-    - Comparer les segementation une à une à l'aide de l'indice ARI
+    - Comparer les segmentation une à une à l'aide de l'indice ARI
     """
     )
     return
@@ -123,22 +128,20 @@ def _():
 
     # ML
     from sklearn.cluster import KMeans
-    from sklearn.metrics import silhouette_score, calinski_harabasz_score
+    from sklearn.compose import ColumnTransformer
+    from sklearn.manifold import TSNE
+    from sklearn.metrics import adjusted_rand_score, calinski_harabasz_score, silhouette_score
     from sklearn.neighbors import NearestNeighbors
-
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import FunctionTransformer, StandardScaler
-    from sklearn.compose import ColumnTransformer
-    from sklearn.metrics import adjusted_rand_score
 
-    # Clustering Analysis
-    from yellowbrick.cluster import KElbowVisualizer, silhouette_visualizer
     return (
         ColumnTransformer,
         FunctionTransformer,
         KMeans,
         Pipeline,
         StandardScaler,
+        TSNE,
         adjusted_rand_score,
         np,
         pd,
@@ -163,7 +166,9 @@ def _(pd):
 @app.cell
 def _(finale_df_filtered):
     # Load variables and sort by recency days
-    rfm_4_var = finale_df_filtered[["recency", "frequency", "monetary", "average_review_score"]].sort_values(by="recency")
+    rfm_4_var = finale_df_filtered[["recency", "frequency", "monetary", "average_review_score"]].sort_values(
+        by="recency"
+    )
     return (rfm_4_var,)
 
 
@@ -175,7 +180,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Divise le jeu de données pour avoir une dvision de clients tous les mois.""")
+    mo.md(r"""Divise le jeu de données pour avoir une division de clients tous les mois.""")
     return
 
 
@@ -199,7 +204,7 @@ def _(mo):
     Je commence par définir un pipeline pour transformer les caractéristiques clients avant leur utilisation par le modèle.
 
     - Transformation logarithmique pour les caractéristiques (**frequency** et **monetary**)
-    - Toutes les colonnes sont ensuites centrées-réduites avec un **StandardScaler**
+    - Toutes les colonnes sont ensuite centrées-réduites avec un **StandardScaler**
     - Je définis **KMeans** comme model à utiliser et le nombre de cluster à **5**
 
     ```python
@@ -236,8 +241,8 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    ### Etape 2: Entrainer un modèle initial
-    Je commence par entrainer le modèle de clustering avec les informations clients tout au long de la première année d'existence de Olist.
+    ### Etape 2: Entraîner un modèle initial
+    Je commence par entraîner le modèle de clustering avec les informations clients tout au long de la première année d'existence de Olist.
 
     Pour cela j'utilise la colonne recency qui contient le nombre de jour écoulés entre aujourd'hui et la commmande passée.
     La valeur max de recency correspond à la plus ancienne commande par un client.
@@ -247,7 +252,7 @@ def _(mo):
 
     /// admonition | Info
         type: info
-    
+
         Utiliser 1 an de données me permet d'éviter les biais de saisonalités où on pourrait avoir moins de client par exemple.
     ///
     """
@@ -263,7 +268,7 @@ def _(mo):
 
     Ensuite, je vais entraîner d'autres modèles en partant de la même base de caractéristiques, mais en avançant dans le temps semaine par semaine. 
 
-    La date de début est initialement définie comme 
+    La date de début est initialement définie comme
     ```python
     start_date = rfm_4_var_df["recency"].max() - t_0
     ```
@@ -303,7 +308,7 @@ def _(mo):
 def _(mo):
     # Slider to try different number of additional days to consider at each iteration
     # Must be a multiple of 7 and value cannot be greater than one year in days (7*52)
-    days_increment_slider = mo.ui.slider(start=7, stop=7 * 3, value=7, step=7, label="Recency window size")
+    days_increment_slider = mo.ui.slider(start=7, stop=7 * 3, value=14, step=7, label="Recency window size")
     days_increment_slider
     return (days_increment_slider,)
 
@@ -324,7 +329,6 @@ def _(
         # Apply log transformation to the input data
         return np.log1p(X)
 
-
     def detect_model_drift(t_0, rfm_df):
         # Parameters
         # Number of additional days to consider at each iteration, 7 by default
@@ -332,7 +336,10 @@ def _(
 
         # Calculate the start date based on the maximum recency value and t_0
         start_date = rfm_df["recency"].max() - t_0
-        current_date = start_date  # Initialisation de la date courante
+        current_date = start_date  # Init starting date
+
+        # Sort dataframe by recency
+        rfm_df = rfm_df.sort_values(by="recency")
 
         # Calculate the initial DataFrame
         # Filter the DataFrame to include only rows with recency greater than or equal to start_date
@@ -365,6 +372,11 @@ def _(
         ari_scores = {}
         current_week = 0  # Initiat week number
 
+        # Lists to store predictions, DataFrames, and centroids
+        predictions_list = []
+        dataframes_list = []
+        centroids_list = []
+
         # Loop over different time periods using a while loop
         while current_date > 0:
             # Filter the DataFrame to include only rows with recency greater than or equal to current_date
@@ -387,9 +399,26 @@ def _(
             # Predict clusters using the initial model
             predicted_clusters = initial_pipeline.predict(current_df)
 
+            # Get the centroids from the current model
+            current_centroids = current_pipeline.named_steps["kmeans"].cluster_centers_
+            initial_centroids = initial_pipeline.named_steps["kmeans"].cluster_centers_
+
             # Calculate the Adjusted Rand Index (ARI) score
             ari_score = adjusted_rand_score(real_clusters, predicted_clusters)
             ari_scores[current_week] = ari_score
+
+            # Store predictions, DataFrames, and centroids
+            predictions_list.append({
+                "week_number": current_week,
+                "real_clusters": real_clusters,
+                "predicted_clusters": predicted_clusters,
+            })
+            dataframes_list.append({"week_number": current_week, "dataframe": current_df})
+            centroids_list.append({
+                "week_number": current_week,
+                "current_centroids": current_centroids,
+                "initial_centroids": initial_centroids,
+            })
 
             # Update the current date and week number
             current_date -= days_increment
@@ -398,8 +427,9 @@ def _(
         # Convert the dictionary to a pandas DataFrame
         ari_scores_df = pd.DataFrame(list(ari_scores.items()), columns=["Week_Number", "ARI_Score"])
 
-        # Return the list of ARI scores and the predicted clusters
-        return ari_scores_df
+        # Return the list of ARI scores, predictions, DataFrames, and centroids
+        return ari_scores_df, predictions_list, dataframes_list, centroids_list
+
     return (detect_model_drift,)
 
 
@@ -437,28 +467,146 @@ def _(plt, sns):
         plt.xticks(rotation=45)
 
         # Add grid lines for better readability
-        plt.grid(True, linestyle="--", alpha=0.7)
+        plt.grid(visible=True, linestyle="--", alpha=0.7)
 
         plt.legend()
         plt.tight_layout()  # Adjust layout to prevent label cutoff
         plt.show()
+
     return (plot_ari_score,)
 
 
 @app.cell
 def _(detect_model_drift, plot_ari_score, rfm_4_var):
-    ari_scores_df = detect_model_drift(408, rfm_4_var)
+    ari_scores_df, predictions_list, dataframes_list, centroids_list = detect_model_drift(408, rfm_4_var)
     plot_ari_score(ari_scores_df)
+    return centroids_list, dataframes_list, predictions_list
+
+
+@app.cell
+def _():
     return
+
+
+@app.cell
+def _(TSNE, pd, plt):
+    def plot_clusters_with_tsne(predictions_list, dataframes_list, centroids_list, iteration_index, sample_size=1000):
+        """Plot real and predicted clusters using t-SNE for dimensionality reduction.
+
+        Parameters:
+        - predictions_list: List of prediction dictionaries.
+        - dataframes_list: List of dataframes.
+        - centroids_list: List of centroids dictionaries.
+        - iteration_index: Index of the iteration to plot.
+        - sample_size: Size of the sample to use for t-SNE.
+        """
+        sample_size = 1000
+
+        # Select a specific iteration
+        initial_df = dataframes_list[0]["dataframe"].copy()
+        current_df = dataframes_list[iteration_index]["dataframe"].copy()
+
+        current_centroids = centroids_list[iteration_index]["current_centroids"]
+        initial_centroids = centroids_list[iteration_index]["initial_centroids"]
+
+        # Assign clusters to individuals
+        initial_df["clusters"] = predictions_list[0]["predicted_clusters"]
+        current_df["clusters"] = predictions_list[iteration_index]["predicted_clusters"]
+
+        # Select only new data from _current_df compared to initial_df
+        new_data_df = current_df.iloc[len(initial_df) :, :]
+
+        # Select a Sample of 800 observation of initial_df and 200 from new data
+        initial_df_sampled = initial_df.sample(n=int(sample_size * 0.8), random_state=42)
+        new_data_sampled_df = new_data_df.sample(n=int(sample_size * 0.2), random_state=42)
+
+        # Merge the DataFrames
+        merged_df = pd.concat([initial_df_sampled, new_data_sampled_df], ignore_index=True)
+
+        # Select a random sample of the data
+        initial_df_sampled = initial_df.sample(n=sample_size, random_state=42)
+        current_sampled_df = current_df.sample(n=sample_size, random_state=42)
+
+        # Features for t-SNE
+        features = merged_df.drop(columns=["clusters"])
+
+        # Apply t-SNE to reduce dimensionality on the sample while preserving the clusters
+        tsne = TSNE(n_components=2, random_state=42, perplexity=4)
+        sampled_df_tsne = tsne.fit_transform(features)
+
+        # Transform the centroids using the same t-SNE model
+        current_centroids_tsne = tsne.fit_transform(current_centroids)
+        initial_centroids_tsne = tsne.fit_transform(initial_centroids)
+
+        # Plot the real and predicted clusters with centroids using t-SNE
+        # plt.figure(figsize=(12, 6))
+
+        # plt.subplot(1, 2, 1)
+        # Plot the first 800 observations
+        plt.scatter(
+            sampled_df_tsne[:800, 0],
+            sampled_df_tsne[:800, 1],
+            c=merged_df["clusters"][:800],
+            cmap="viridis",
+            s=50,
+            label="First 800 Observations",
+        )
+
+        # Plot the last 200 observations with 'x'
+        plt.scatter(
+            sampled_df_tsne[800:, 0],
+            sampled_df_tsne[800:, 1],
+            c=merged_df["clusters"][800:],
+            cmap="viridis",
+            s=50,
+            marker="x",
+            label="Last 200 Observations",
+        )
+        plt.scatter(
+            initial_centroids_tsne[:, 0],
+            initial_centroids_tsne[:, 1],
+            c="red",
+            s=200,
+            alpha=0.75,
+            marker="X",
+            label="Centroids",
+        )
+        plt.title(f"Real Clusters - Week {predictions_list[iteration_index]['week_number']:.0f}")
+        plt.xlabel("t-SNE 1")
+        plt.ylabel("t-SNE 2")
+
+        plt.legend()
+        plt.show()
+
+    return (plot_clusters_with_tsne,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""Voyons si je peux voir une difference dans les clusters formés en utilisant une projection à 2 dimensions.""")
+    return
+
+
+@app.cell
+def _(
+    centroids_list,
+    dataframes_list,
+    plot_clusters_with_tsne,
+    predictions_list,
+):
+    iteration_index = 5
+
+    plot_clusters_with_tsne(predictions_list, dataframes_list, centroids_list, iteration_index)
+    return (iteration_index,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
-    L'analyse de la stabilité temporelle des clusters révèle que la similarité entre les segmentations commence à se dégrader significativement à partir de la **sixième semaine**, comme en témoigne la chute du score ARI en dessous du seuil de **0,8**. 
+    L'analyse de la stabilité temporelle des clusters révèle que la similarité entre les segmentations commence à se dégrader significativement à partir de la **huitième semaine**, comme en témoigne la chute du score ARI en dessous du seuil de **0,8**. 
 
-    Cette diminution de stabilité suggère qu'un réentraînement du modèle serait nécessaire à partir de cette période pour maintenir une segmentation pertinente des clients, reflétant ainsi l'évolution de leur comportement.
+    Cette diminution de stabilité suggère qu'un nouvel entraînement du modèle serait nécessaire à partir de cette période pour maintenir une segmentation pertinente des clients, reflétant ainsi l'évolution de leur comportement.
     """
     )
     return
@@ -466,24 +614,27 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""Comparons la distribution des caractéristiques clients en fonction des périodes initiles par rapport à période_initiale + 6 semaines"""
-    )
+    mo.md(r"""Comparons la distribution des caractéristiques clients en fonction des périodes initiales par rapport à période_initiale + 6 semaines""")
     return
 
 
 @app.cell
-def _(rfm_4_var):
-    # Parameters
-    t_0 = rfm_4_var["recency"].max() - 365
-    t_1 = t_0 + (46 * 7)
+def _(dataframes_list, iteration_index):
+    # initial_df = dataframes_list[0]["dataframe"]
+    _current_df = dataframes_list[iteration_index]["dataframe"]
+    _current_df
+    return
 
-    # Calculate the initial DataFrame
-    # Filter the DataFrame to include only rows with recency greater than or equal to start_date
-    initial_df = rfm_4_var[rfm_4_var["recency"] >= t_0].copy()
 
-    # Filter the DataFrame to include only rows with recency greater than or equal to current_date
-    t1_df = rfm_4_var[rfm_4_var["recency"] >= t_1].copy()
+@app.cell(hide_code=True)
+def _(dataframes_list, iteration_index, mo):
+    # Get initial DataFrame
+    initial_df = dataframes_list[0]["dataframe"]
+
+    # Get datframes when algorithm start to be obsolete
+    t1_df = dataframes_list[iteration_index]["dataframe"]
+    nb_new_customer = len(t1_df) - len(initial_df)
+    mo.md(f"L'algorithme commence à devenir obsolète à partir de **{nb_new_customer}** nouveaux clients")
     return initial_df, t1_df
 
 
@@ -497,8 +648,8 @@ def _(initial_df, plt, sns, t1_df):
     for i, column in enumerate(initial_df.columns):
         # Sous-graphique pour initial_df
         ax1 = fig.add_subplot(gs[i])
-        sns.kdeplot(data=initial_df, x=column, ax=ax1, fill=True, label="données initiale")
-        sns.kdeplot(data=t1_df, x=column, ax=ax1, fill=True, label="données initiale + t1")
+        sns.histplot(data=initial_df, x=column, ax=ax1, fill=True, label="données initiale")
+        sns.histplot(data=t1_df, x=column, ax=ax1, fill=True, label="données initiale + t1")
         ax1.set_title(f'Distribution KDE de "{column}" - Initial DataFrame')
         ax1.set_xlabel(column)
         ax1.set_ylabel("Densité")
@@ -510,14 +661,193 @@ def _(initial_df, plt, sns, t1_df):
 
 
 @app.cell
+def _(plt, sns):
+    def plot_cluster_stats(df, cluster_labels, stats, title=None):
+        """Function to plot cluster statistics.
+
+        Parameters:
+        - df: DataFrame containing the characteristics (recency, frequency, monetary, etc.)
+        - cluster_labels: Cluster labels (array-like)
+        - stats: List of statistics to calculate
+        """
+        # Create a copy of the DataFrame and add cluster labels
+        rfm_named_df = df.copy()
+        characteristics = rfm_named_df.columns
+
+        rfm_named_df["Clusters"] = cluster_labels
+
+        # Create aggregation dictionary
+        agg_dict = dict.fromkeys(characteristics, stats)
+        # Add count for one characteristic (it will be the same for all)
+        agg_dict[characteristics[0]] = ["count"] + agg_dict[characteristics[0]]
+
+        # Calculate statistics
+        _stats_results = rfm_named_df.groupby("Clusters").agg(agg_dict).round().reset_index()
+
+        # Flatten multi-index columns
+        new_columns = ["Clusters", "Count"]
+        for char in characteristics:
+            for stat in stats:
+                new_columns.append(f"{char}_{stat}")
+
+        _stats_results.columns = new_columns
+
+        fig0 = plt.figure(figsize=(5, 4))
+        fig0.suptitle(title)
+        sns.barplot(x="Clusters", y="Count", data=_stats_results)
+        plt.title("Count by Cluster")
+        plt.tight_layout()
+        plt.show()
+
+        # Create a figure with a grid of subplots
+        fig = plt.figure(figsize=(15, 6))
+        grid = plt.GridSpec(2, len(characteristics), wspace=0.4, hspace=0.4)
+
+        # Create bar plots for each characteristic and statistic
+        for i, char in enumerate(characteristics):
+            for j, _ in enumerate(stats):
+                ax = plt.subplot(grid[j, i])
+                sns.boxplot(x="Clusters", y=rfm_named_df[char], data=rfm_named_df, ax=ax, showfliers=False)
+                ax.set_title(f"{char.capitalize()} by Cluster")
+                ax.set_xlabel("Cluster")
+                ax.set_ylabel(f"{char.capitalize()}")
+
+        # Adjust layout
+        plt.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.4, hspace=0.4)
+
+        # Show plot
+        plt.show()
+
+        return _stats_results
+
+    return (plot_cluster_stats,)
+
+
+@app.cell
+def _(initial_df, plot_cluster_stats, predictions_list):
+    plot_cluster_stats(
+        initial_df,
+        cluster_labels=predictions_list[0]["predicted_clusters"],
+        stats=["mean"],
+        title="Analyse groupes clients semaine 0",
+    )
+    return
+
+
+@app.cell
+def _(iteration_index, plot_cluster_stats, predictions_list, t1_df):
+    _clusters = predictions_list[iteration_index]["predicted_clusters"]
+    plot_cluster_stats(
+        t1_df, cluster_labels=_clusters, stats=["mean"], title=f"Analyse groupes clients semaine {iteration_index * 2}"
+    )
+    return
+
+
+@app.cell
+def _(iteration_index, plot_cluster_stats, predictions_list, t1_df):
+    _clusters = predictions_list[iteration_index]["real_clusters"]
+    plot_cluster_stats(
+        t1_df, cluster_labels=_clusters, stats=["mean"], title=f"Analyse groupes clients semaine {iteration_index * 2}"
+    )
+    return
+
+
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
     Les graphiques ci dessous montrent l'évolution de la distribution des informations clients.
 
-    La notation client est bien différente après 50 semaines que par rapport à la période d'entrainement du premier model.
+    Après 8 semaines, les caractéristiques de chaque groupe ne sont pas franchemnt différentes mais l'assignation des clients dans les groupes adéquats sont inexacts.
     """
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""### Modélisation pour la soutenance""")
+    return
+
+
+@app.cell
+def _(KMeans, np, plt):
+    from sklearn.datasets import make_blobs
+
+    # Générer des données aléatoires pour le clustering initial
+    X_initial, _ = make_blobs(n_samples=300, centers=5, cluster_std=0.60, random_state=0)
+
+    # Créer une instance de KMeans
+    kmeans_initial = KMeans(n_clusters=5, random_state=42)
+
+    # Entraîner le modèle sur les données initiales
+    kmeans_initial.fit(X_initial)
+
+    # Prédire les clusters pour les données initiales
+    initial_clusters = kmeans_initial.predict(X_initial)
+
+    # Récupérer les centroïdes
+    centroids_initial = kmeans_initial.cluster_centers_
+
+    # Générer de nouvelles données
+    X_new, _ = make_blobs(n_samples=100, centers=5, cluster_std=0.60, random_state=42)
+
+    # Prédire les clusters pour les nouvelles données avec le modèle initial
+    new_clusters_initial = kmeans_initial.predict(X_new)
+
+    # Réentraîner le modèle avec les données initiales et les nouvelles données
+    X_combined = np.vstack((X_initial, X_new))
+    kmeans_retrained = KMeans(n_clusters=5, random_state=42)
+    kmeans_retrained.fit(X_combined)
+
+    # Prédire les clusters pour les données combinées avec le modèle réentraîné
+    combined_clusters_retrained = kmeans_retrained.predict(X_combined)
+
+    # Récupérer les nouveaux centroïdes
+    centroids_retrained = kmeans_retrained.cluster_centers_
+
+    # Tracer les résultats
+    plt.figure(figsize=(8, 20))
+
+    # Tracer les données initiales avec le modèle initial
+    plt.subplot(4, 1, 1)
+    plt.scatter(X_initial[:, 0], X_initial[:, 1], c=initial_clusters, s=50, cmap="viridis", label="Initial Data")
+    plt.scatter(centroids_initial[:, 0], centroids_initial[:, 1], c="red", s=200, alpha=0.75, marker="X", label="Centroids")
+    plt.title("Clustering Initial avec KMeans")
+    plt.xlabel("Caractéristique 1")
+    plt.ylabel("Caractéristique 2")
+    plt.legend()
+
+    # Tracer les données initiales et les nouvelles données avec le modèle initial
+    plt.subplot(4, 1, 2)
+    plt.scatter(X_initial[:, 0], X_initial[:, 1], c=initial_clusters, s=50, cmap="viridis", label="Initial Data")
+    plt.scatter(X_new[:, 0], X_new[:, 1], c=new_clusters_initial, s=50, cmap="viridis", marker="x", label="New Data")
+    plt.scatter(centroids_initial[:, 0], centroids_initial[:, 1], c="red", s=200, alpha=0.75, marker="X", label="Centroids")
+    plt.title("Clustering avec Modèle Initial")
+    plt.xlabel("Caractéristique 1")
+    plt.ylabel("Caractéristique 2")
+    plt.legend()
+
+    # Tracer les données combinées avec le modèle réentraîné
+    plt.subplot(4, 1, 3)
+    plt.scatter(X_combined[:, 0], X_combined[:, 1], c=combined_clusters_retrained, s=50, cmap="viridis", label="Combined Data")
+    plt.scatter(centroids_retrained[:, 0], centroids_retrained[:, 1], c="red", s=200, alpha=0.75, marker="X", label="Centroids")
+    plt.title("Clustering avec Modèle Réentraîné")
+    plt.xlabel("Caractéristique 1")
+    plt.ylabel("Caractéristique 2")
+    plt.legend()
+
+    # Tracer les centroïdes initiaux et réentraînés pour comparaison
+    plt.subplot(4, 1, 4)
+    plt.scatter(centroids_initial[:, 0], centroids_initial[:, 1], c="blue", s=200, alpha=0.75, marker="X", label="Initial Centroids")
+    plt.scatter(centroids_retrained[:, 0], centroids_retrained[:, 1], c="red", s=200, alpha=0.75, marker="X", label="Retrained Centroids")
+    plt.title("Comparaison des Centroïdes")
+    plt.xlabel("Caractéristique 1")
+    plt.ylabel("Caractéristique 2")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
     return
 
 

@@ -1,7 +1,11 @@
 import marimo
 
 __generated_with = "0.13.15"
-app = marimo.App(width="medium", app_title="P5 Requetes Dashboard")
+app = marimo.App(
+    width="medium",
+    app_title="P5 Requetes Dashboard",
+    auto_download=["html", "ipynb"],
+)
 
 
 @app.cell(hide_code=True)
@@ -58,7 +62,7 @@ def _(mo):
 
     3. Qui sont les nouveaux vendeurs (moins de 3 mois d'ancienneté) qui sont déjà très engagés avec la plateforme (ayant déjà vendu plus de 30 produits) ?
 
-    3. Quels sont les 5 codes postaux, enregistrant plus de 30 reviews, avec le pire review score moyen sur les 12 derniers mois ?
+    4. Quels sont les 5 codes postaux, enregistrant plus de 30 reviews, avec le pire review score moyen sur les 12 derniers mois ?
     """
     )
     return
@@ -66,9 +70,7 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    _src = (
-        "/home/laguill/Documents/01-Etudes/OpenClassrooms/P5_Segmenter-clients-dun-site-de-ecommerce/notebooks/public/image.png"
-    )
+    _src = "notebooks/public/relation_db.png"
     mo.image(src=_src, rounded=True)
     return
 
@@ -90,7 +92,6 @@ def _():
     import marimo as mo
     import pandas as pd
     import seaborn as sns
-
     import sqlalchemy
 
     DATABASE_URL = "sqlite:///data/raw/olist.db"
@@ -110,7 +111,7 @@ def _(engine, mo, sqlite_master):
         f"""
         SELECT * FROM sqlite_master WHERE type='table'
         """,
-        engine=engine
+        engine=engine,
     )
     return
 
@@ -175,7 +176,7 @@ def _(engine, mo, orders):
         FROM
             orders
         """,
-        engine=engine
+        engine=engine,
     )
     return
 
@@ -189,7 +190,7 @@ def _(engine, mo):
         FROM
             orders
         """,
-        engine=engine
+        engine=engine,
     )
     return
 
@@ -217,7 +218,7 @@ def _(engine, mo):
         ORDER BY
             retard_livraison DESC;
         """,
-        engine=engine
+        engine=engine,
     )
     return
 
@@ -245,7 +246,7 @@ def _(mo):
         r"""
     - ~~Charger la table `order_items`~~ ✅
     - ~~Fusionner avec la table order pour récupérer les produits livrés `order`~~ ✅
-    - ~~Selectionner colonnes `seller_id` et `price`~~ ✅
+    - ~~Sélectionner colonnes `seller_id` et `price`~~ ✅
     - ~~Calculer la somme de `price_id` et renommer en chiffre d'affaire~~ ✅
     - ~~Grouper par `seller_id`~~ ✅
     - ~~Conserver les lignes dont chiffres d'affaires supérieurs à 100 000~~ ✅
@@ -294,7 +295,7 @@ def _(engine, mo, order_items, orders):
         ORDER BY
             total_amount_sold DESC
         """,
-        engine=engine
+        engine=engine,
     )
     return
 
@@ -323,7 +324,7 @@ def _(mo):
     - ~~Trouver date première vente des vendeurs **MIN()**~~ ✅
     - ~~Grouper par vendeur~~ ✅
     - ~~Filtrer pour conserver première vente datant de moins de 3 mois~~ ✅
-    - ~~Aggréger avec la somme du nombre de produits vendus~~ ✅
+    - ~~Agréger avec la somme du nombre de produits vendus~~ ✅
     - ~~Filtrer pour conserver les vendeurs où nb_produits_vendu > 30~~ ✅
     """
     )
@@ -360,7 +361,7 @@ def _(engine, mo):
         ORDER BY
             premiere_vente DESC
         """,
-        engine=engine
+        engine=engine,
     )
     return
 
@@ -456,7 +457,7 @@ def _(engine, mo):
         LIMIT
             5
         """,
-        engine=engine
+        engine=engine,
     )
     return
 

@@ -4,7 +4,6 @@ __generated_with = "0.13.15"
 app = marimo.App(
     width="medium",
     app_title="P5 Exploration",
-    auto_download=["ipynb", "html"],
     sql_output="pandas",
 )
 
@@ -93,7 +92,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    _src = "public/relation_db.png"
+    _src = "notebooks/public/relation_db.png"
     mo.image(src=_src, rounded=True)
     return
 
@@ -129,7 +128,6 @@ def _():
 
     # load seaborn
     sns.set_theme()
-    # sns.set(font_scale=1.2)
     return Path, ProfileReport, np, pd, plt, px, sns, sqlalchemy
 
 
@@ -215,7 +213,7 @@ def _(Path, mo):
 def _(mo):
     mo.md(
         r"""
-    L'analyse exploratoires des tables de la base données me permet pour le moment d'obtenir ces informations: 
+    L'analyse exploratoires des tables de la base données me permet pour le moment d'obtenir ces informations:
 
     - 9 tables dans la base de données
     - 99 441 commandes (table **customers**)
@@ -227,7 +225,6 @@ def _(mo):
     - types de payments
         - **orders_pymts**
         - 5 types (card debit/credit, voucher, etc...)
-        - Pour une même commande différents mode de paiment peuvent être utilisés (penser à faire la somme pour avoir le montant exact d'une commande)
     - tables **orders**
         - delivered_carrier_date
         - delivered_customer_date
@@ -778,7 +775,7 @@ def _(colors, plt, rfm_df, sns):
 def _(mo):
     mo.md(
         r"""
-    - Le site est actif: Commande dans les 330 derniers jours
+    - Le site est actif: Commandes dans les 330 derniers jours
     - Progression du nombre de commande depuis les 360 derniers jours et se maintient.
     """
     )
@@ -1161,6 +1158,14 @@ def _(avg_review_df, customer_zip_code_df, pd, rfm_df):
     # display final df
     db_finale
     return (db_finale,)
+
+
+@app.cell
+def _(db_finale, plt, sns):
+    sns.barplot(db_finale[["recency", "frequency", "monetary", "average_review_score"]].isna().sum())
+    plt.xticks(rotation=45)
+    plt.show()
+    return
 
 
 @app.cell

@@ -4,13 +4,14 @@ __generated_with = "0.13.15"
 app = marimo.App(
     width="medium",
     app_title="P5 Essais",
-    auto_download=["html", "ipynb"],
+    auto_download=["ipynb", "html"],
 )
 
 
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
@@ -54,7 +55,7 @@ def _(mo):
 
     L'objectif de cette étude est d'utiliser les caractéristiques clients disponibles pour identifier des segments de clients pertinents pour le marketing.
 
-    Ici, on a un grand nombre de donnée et les groupes de clients ne sont pas définis. 
+    Ici, on a un grand nombre de donnée et les groupes de clients ne sont pas définis.
 
     Ce sera au modèle de les déterminer.
 
@@ -72,14 +73,14 @@ def _(mo):
 
     **Fonction de coût/Métrique**
 
-    Les métriques choisit ici pour définir la performance des modèles sont le coefficient de silhouette, le coeficient de calinski_harabasz et la méthode du coude. 
+    Les métriques choisit ici pour définir la performance des modèles sont le coefficient de silhouette, le coefficient de calinski_harabasz et la méthode du coude.
 
     Le coefficient de silhouette mesure la cohérence interne des clusters en comparant:
 
     - la distance moyenne des points au sein de chaque cluster
     - la distance moyenne entre les clusters.
 
-    A savoir que:  
+    A savoir que:
 
     > Un coefficient de silhouette de 1 indique des clusters parfaitement distincts, tandis qu'un coefficient de -1 signale des clusters mal définis.
 
@@ -92,7 +93,7 @@ def _(mo):
     Le coefficient calinski_harabasz de mesure le rapport entre la dispersion entre les clusters et la dispersion au sein des clusters
     > Un coefficient élevé indique de meilleures performances de clustering, avec une séparation plus élevée entre les clusters et une variance plus faible au sein des cluster
 
-    Egalement lors de l'utilisation de l'algorithme des kmean, je vais mesurer la distorsion (la méthode du coude) afin d'identifier le nombre optimal de k voisins.
+    Également lors de l'utilisation de l'algorithme des kmean, je vais mesurer la distorsion (la méthode du coude) afin d'identifier le nombre optimal de k voisins.
 
     > La méthode du coude aide à trouver le nombre optimal de clusters. Pour cela, on trace une courbe montrant comment la variance des points au sein des clusters diminue avec le nombre de clusters.
     > Le "coude" de la courbe indique le point où ajouter plus de clusters ne améliore plus significativement la séparation des données.
@@ -158,15 +159,16 @@ def _():
 
     # ML
     from scipy.cluster.hierarchy import dendrogram
-    from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN
+    from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
     from sklearn.decomposition import PCA
-    from sklearn.metrics import silhouette_score, calinski_harabasz_score
+    from sklearn.manifold import TSNE
+    from sklearn.metrics import calinski_harabasz_score, silhouette_score
     from sklearn.neighbors import NearestNeighbors
     from sklearn.preprocessing import StandardScaler
-    from sklearn.manifold import TSNE
 
     # Clustering Analysis
     from yellowbrick.cluster import KElbowVisualizer, silhouette_visualizer
+
     return (
         AgglomerativeClustering,
         DBSCAN,
@@ -226,20 +228,20 @@ def _(mo):
 @app.cell
 def _(final_df, plt, sns):
     sns.kdeplot(final_df["average_review_score"])
-    # Calculer la médiane et la moyenne
+    # Calculate median and mean
     median = final_df["average_review_score"].median()
     mean = final_df["average_review_score"].mean()
 
-    # Ajouter une ligne en pointillés bleue pour la médiane
-    plt.axvline(median, color='blue', linestyle='--', label='Median')
+    # Add dashed blue line for median
+    plt.axvline(median, color="blue", linestyle="--", label="Median")
 
-    # Ajouter une ligne en pointillés rouge pour la moyenne
-    plt.axvline(mean, color='red', linestyle='--', label='Mean')
+    # Add dashed red line for mean
+    plt.axvline(mean, color="red", linestyle="--", label="Mean")
 
-    # Ajouter une légende pour identifier les lignes
+    # Add a legend to identify the lines
     plt.legend()
 
-    # Afficher le graphique
+    # Show the plot
     plt.show()
     return
 
@@ -248,7 +250,7 @@ def _(final_df, plt, sns):
 def _(final_df, mo):
     mo.md(
         rf"""
-    Les valeurs manquantes repésentent **{(final_df["average_review_score"].isna().sum()/final_df.shape[0]):.2%}**
+    Les valeurs manquantes représentent **{(final_df["average_review_score"].isna().sum() / final_df.shape[0]):.2%}**
 
     Je supprime les lignes du jeu de données pour ne pas générer de bais.
     """
@@ -270,7 +272,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Lors de la phase d'exploration, j'ai appliqué une transformé logarthmique pour transformer la distribution des caractéristiques frequency et monetary. C'est celles que je vais conserver pour mon analyse.""")
+    mo.md(r"""Lors de la phase d'exploration, j'ai appliqué une transformé logarithmique pour transformer la distribution des caractéristiques frequency et monetary. C'est celles que je vais conserver pour mon analyse.""")
     return
 
 
@@ -316,7 +318,7 @@ def _(KMeans, StandardScaler, calinski_harabasz_score, mo, silhouette_score):
 
         # Calculate inertia for different numbers of clusters
         for i in mo.status.progress_bar(clusters):
-            kmeans = KMeans(n_clusters=i, random_state=42)  
+            kmeans = KMeans(n_clusters=i, random_state=42)
             kmeans.fit(X_scaled)
 
             # Get the computed labels
@@ -334,13 +336,13 @@ def _(KMeans, StandardScaler, calinski_harabasz_score, mo, silhouette_score):
                 silhouettes.append(silhouette_score(X_scaled, cluster_labels, n_jobs=-1))
 
         return inertia, calinski, silhouettes
+
     return (kmeans_optimized,)
 
 
 @app.cell
 def _(plt):
-    def plot_kmeans_optimized(clusters,inertia, calinski, silhouettes=None):
-
+    def plot_kmeans_optimized(clusters, inertia, calinski, silhouettes=None):
         # Plot the cost curve
         # Create a figure with 1 row and 2 columns
         plt.figure(figsize=(20, 6))
@@ -369,14 +371,15 @@ def _(plt):
             plt.title("Silhouette Method")
 
         plt.show()
+
     return (plot_kmeans_optimized,)
 
 
 @app.cell
 def _(kmeans_optimized, mo, plot_kmeans_optimized, rfm_df):
-    _clusters = range(2,12)
+    _clusters = range(2, 12)
     with mo.persistent_cache(name="Kmeans_silhouettes_rfm_cache"):
-        _inertia, _calinski, _silhouettes = kmeans_optimized(rfm_df, _clusters ,silhouettes_plot=True)
+        _inertia, _calinski, _silhouettes = kmeans_optimized(rfm_df, _clusters, silhouettes_plot=True)
 
     plot_kmeans_optimized(_clusters, _inertia, _calinski, _silhouettes)
     return
@@ -416,7 +419,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""J'ai identifié le nombre de clusters qui me semblent optimum (4 ou 5) voyons la répartion des clients dans ces groupes.""")
+    mo.md(r"""J'ai identifié le nombre de clusters qui me semblent optimum (4 ou 5) voyons la répartition des clients dans ces groupes.""")
     return
 
 
@@ -441,11 +444,7 @@ def _(KMeans, X_scaled, plt):
     axis_4_3vars_clusters = figure.add_subplot(grid_spec[0, 0], projection="3d")
     # Plot the values colored by labels
     axis_4_3vars_clusters.scatter(
-        xs=X_scaled[:, 0],
-        ys=X_scaled[:, 1],
-        zs=X_scaled[:, 2],
-        c=kmeans_4_3vars_clusters.labels_,
-        cmap="Set1"
+        xs=X_scaled[:, 0], ys=X_scaled[:, 1], zs=X_scaled[:, 2], c=kmeans_4_3vars_clusters.labels_, cmap="Set1"
     )
     axis_4_3vars_clusters.set_xlabel("Récence", fontsize=15)
     axis_4_3vars_clusters.set_ylabel("Fréquence", fontsize=15)
@@ -459,11 +458,7 @@ def _(KMeans, X_scaled, plt):
     axis_5_3vars_clusters = figure.add_subplot(grid_spec[0, 1], projection="3d")
     # Plot the values colored by labels
     axis_5_3vars_clusters.scatter(
-        xs=X_scaled[:, 0],
-        ys=X_scaled[:, 1],
-        zs=X_scaled[:, 2],
-        c=kmeans_5_3vars_clusters.labels_,
-        cmap="Set1"
+        xs=X_scaled[:, 0], ys=X_scaled[:, 1], zs=X_scaled[:, 2], c=kmeans_5_3vars_clusters.labels_, cmap="Set1"
     )
     axis_5_3vars_clusters.set_xlabel("Récence", fontsize=15)
     axis_5_3vars_clusters.set_ylabel("Fréquence", fontsize=15)
@@ -481,7 +476,7 @@ def _(mo):
 @app.cell
 def _(X_scaled, kmeans_4_3vars_clusters, mo, silhouette_visualizer):
     with mo.persistent_cache(name="plots_silhouettes_4clusters_rfm_cache"):
-        _viz = silhouette_visualizer(kmeans_4_3vars_clusters, X_scaled, show=False,colors='yellowbrick')
+        _viz = silhouette_visualizer(kmeans_4_3vars_clusters, X_scaled, show=False, colors="yellowbrick")
 
     _viz.show()
     return
@@ -490,7 +485,7 @@ def _(X_scaled, kmeans_4_3vars_clusters, mo, silhouette_visualizer):
 @app.cell
 def _(X_scaled, kmeans_5_3vars_clusters, mo, silhouette_visualizer):
     with mo.persistent_cache(name="plots_silhouettes_5clusters_rfm_cache"):
-        _viz = silhouette_visualizer(kmeans_5_3vars_clusters, X_scaled, show=False,colors='yellowbrick')
+        _viz = silhouette_visualizer(kmeans_5_3vars_clusters, X_scaled, show=False, colors="yellowbrick")
     _viz.show()
     return
 
@@ -510,8 +505,7 @@ def _(mo):
 @app.cell
 def _(plt, sns):
     def plot_cluster_stats(df, cluster_labels, characteristics, stats):
-        """
-        Function to plot cluster statistics.
+        """Function to plot cluster statistics.
 
         Parameters:
         - df: DataFrame containing the characteristics (recency, frequency, monetary, etc.)
@@ -524,7 +518,7 @@ def _(plt, sns):
         rfm_named_df["Clusters"] = cluster_labels
 
         # Create aggregation dictionary
-        agg_dict = {char: stats for char in characteristics}
+        agg_dict = dict.fromkeys(characteristics, stats)
         # Add count for one characteristic (it will be the same for all)
         agg_dict[characteristics[0]] = ["count"] + agg_dict[characteristics[0]]
 
@@ -550,10 +544,9 @@ def _(plt, sns):
 
         # Create bar plots for each characteristic and statistic
         for i, char in enumerate(characteristics):
-            for j, stat in enumerate(stats):
+            for j, _ in enumerate(stats):
                 ax = plt.subplot(grid[j, i])
-                # sns.boxplot(x="Clusters", y=f"{char}_{stat}", data=_stats_results, ax=ax)
-                sns.boxplot(x="Clusters", y=rfm_named_df[char], data=rfm_named_df,ax=ax, showfliers=False)
+                sns.boxplot(x="Clusters", y=rfm_named_df[char], data=rfm_named_df, ax=ax, showfliers=False)
                 ax.set_title(f"{char.capitalize()} by Cluster")
                 ax.set_xlabel("Cluster")
                 ax.set_ylabel(f"{char.capitalize()}")
@@ -565,12 +558,15 @@ def _(plt, sns):
         plt.show()
 
         return _stats_results
+
     return (plot_cluster_stats,)
 
 
 @app.cell
 def _(final_df_filtered, kmeans_4_3vars_clusters, plot_cluster_stats):
-    plot_cluster_stats(final_df_filtered, kmeans_4_3vars_clusters.labels_, ['recency', 'frequency', 'monetary'], stats=['mean'])
+    plot_cluster_stats(
+        final_df_filtered, kmeans_4_3vars_clusters.labels_, ["recency", "frequency", "monetary"], stats=["mean"]
+    )
     return
 
 
@@ -585,8 +581,7 @@ def _(mo):
     - Groupe 2: Clients qui ont utilisé la plateforme plus d'une fois
     - Groupe 3: Clients qui n'ont pas utilisé la plateforme depuis longtemps.
 
-    Je ne vais plus loin dans l'analyse.
-    Je préfère tester d'autres modèles ou configurations du dataframe.
+    Il serait interessant de visualiser les groupes clients créer en ajoutant les notes de satisfactions.
     """
     )
     return
@@ -612,9 +607,9 @@ def _(final_df_filtered):
 
 @app.cell
 def _(kmeans_optimized, mo, plot_kmeans_optimized, rfm_4var_df):
-    _clusters = range(2,12)
+    _clusters = range(2, 12)
     with mo.persistent_cache(name="Kmeans_silhouettes_rfm_4var_cache"):
-        _inertia, _calinski, _silhouettes = kmeans_optimized(rfm_4var_df, _clusters ,silhouettes_plot=True)
+        _inertia, _calinski, _silhouettes = kmeans_optimized(rfm_4var_df, _clusters, silhouettes_plot=True)
 
     plot_kmeans_optimized(_clusters, _inertia, _calinski, _silhouettes)
     return
@@ -640,15 +635,14 @@ def _(mo):
 @app.cell
 def _(KMeans, StandardScaler):
     def train_kmeans_models(X, clusters):
-        """
-        Entraîne plusieurs modèles KMeans avec différents nombres de clusters.
+        """Train KMeans models with different numbers of clusters.
 
-        Paramètres :
-        X (array-like) : Données non normalisées à clusteriser
-        clusters (list) : Liste des nombres de clusters à tester
+        Parameters:
+        X (array-like): Unnormalized data to cluster.
+        clusters (list): List of numbers of clusters to test.
 
-        Retourne :
-        dict : Dictionnaire contenant les modèles entraînés
+        Returns:
+        dict: Dictionary containing the trained models.
         """
         models = {}
 
@@ -657,24 +651,25 @@ def _(KMeans, StandardScaler):
         X_scaled = scaler.fit_transform(X)
 
         for n_clusters in clusters:
-            # Initialisation et entraînement du modèle KMeans
+            # Initialize and train the KMeans model
             model = KMeans(n_clusters=n_clusters, random_state=42)
             model.fit(X_scaled)
 
             # Stockage du modèle
-            models[f'kmeans_{n_clusters}'] = model
+            models[f"kmeans_{n_clusters}"] = model
 
         return models
+
     return (train_kmeans_models,)
 
 
 @app.cell
 def _(rfm_4var_df, scaler, train_kmeans_models):
-    _clusters = [5,6,8]
+    _clusters = [5, 6, 8]
     kmeans_models = train_kmeans_models(rfm_4var_df, _clusters)
-    kmeans_5_4var = kmeans_models['kmeans_5']
-    kmeans_6_4var = kmeans_models['kmeans_6']
-    kmeans_8_4var = kmeans_models['kmeans_8']
+    kmeans_5_4var = kmeans_models["kmeans_5"]
+    kmeans_6_4var = kmeans_models["kmeans_6"]
+    kmeans_8_4var = kmeans_models["kmeans_8"]
 
     # Standardize features
     rfm_4var_scaled = scaler.fit_transform(rfm_4var_df)
@@ -684,7 +679,7 @@ def _(rfm_4var_df, scaler, train_kmeans_models):
 @app.cell
 def _(kmeans_5_4var, mo, rfm_4var_scaled, silhouette_visualizer):
     with mo.persistent_cache(name="plots_silhouettes_5clusters_4var_kmeans"):
-        _viz = silhouette_visualizer(kmeans_5_4var, rfm_4var_scaled,show=False, colors='yellowbrick')
+        _viz = silhouette_visualizer(kmeans_5_4var, rfm_4var_scaled, show=False, colors="yellowbrick")
 
     _viz.show()
     return
@@ -693,7 +688,7 @@ def _(kmeans_5_4var, mo, rfm_4var_scaled, silhouette_visualizer):
 @app.cell
 def _(kmeans_6_4var, mo, rfm_4var_scaled, silhouette_visualizer):
     with mo.persistent_cache(name="plots_silhouettes_6clusters_4var_kmeans"):
-        _viz = silhouette_visualizer(kmeans_6_4var, rfm_4var_scaled,show=False, colors='yellowbrick')
+        _viz = silhouette_visualizer(kmeans_6_4var, rfm_4var_scaled, show=False, colors="yellowbrick")
 
     _viz.show()
     return
@@ -702,7 +697,7 @@ def _(kmeans_6_4var, mo, rfm_4var_scaled, silhouette_visualizer):
 @app.cell
 def _(kmeans_8_4var, mo, rfm_4var_scaled, silhouette_visualizer):
     with mo.persistent_cache(name="plots_silhouettes_8clusters_4vars_kmeans"):
-        _viz = silhouette_visualizer(kmeans_8_4var, rfm_4var_scaled,show=False, colors='yellowbrick')
+        _viz = silhouette_visualizer(kmeans_8_4var, rfm_4var_scaled, show=False, colors="yellowbrick")
 
     _viz.show()
     return
@@ -724,7 +719,12 @@ def _(mo):
 
 @app.cell
 def kmeans_5_4vars_plots(final_df_filtered, kmeans_5_4var, plot_cluster_stats):
-    plot_cluster_stats(final_df_filtered, kmeans_5_4var.labels_, ["recency", "frequency", "monetary", "average_review_score"], stats=['mean'])
+    plot_cluster_stats(
+        final_df_filtered,
+        kmeans_5_4var.labels_,
+        ["recency", "frequency", "monetary", "average_review_score"],
+        stats=["mean"],
+    )
     return
 
 
@@ -772,7 +772,10 @@ def _(mo):
 @app.cell
 def _(final_df_filtered, pd, scaler):
     # Create a sample of the dataframe
-    final_df_filtered_sampled = pd.DataFrame(final_df_filtered, columns=["recency", "log_frequency", "frequency", "log_monetary", "monetary", "average_review_score"]).sample(n=10000, random_state=42)
+    final_df_filtered_sampled = pd.DataFrame(
+        final_df_filtered,
+        columns=["recency", "log_frequency", "frequency", "log_monetary", "monetary", "average_review_score"],
+    ).sample(n=10000, random_state=42)
 
     rfm_4var_sampled = final_df_filtered_sampled[["recency", "log_frequency", "log_monetary", "average_review_score"]]
 
@@ -805,26 +808,26 @@ def _(NearestNeighbors, np, plt, rfm_4var_scaled_sampled):
     _k = 8
 
     # Compute k-nearest neighbors
-    # you need to add 1 to k as this function also return 
+    # you need to add 1 to k as this function also return
     # distance to itself (first column is zero)
-    _nbrs = NearestNeighbors(n_neighbors=_k+1).fit(rfm_4var_scaled_sampled)
+    _nbrs = NearestNeighbors(n_neighbors=_k + 1).fit(rfm_4var_scaled_sampled)
 
     # get distances
     # Compute the distances and indices of our data
-    distances, indices = _nbrs.kneighbors(rfm_4var_scaled_sampled)
+    distances, _ = _nbrs.kneighbors(rfm_4var_scaled_sampled)
 
     # Sort distances
     distances = np.sort(distances, axis=0)
 
     # drop first which is zero
-    distances = distances[:,1]
+    distances = distances[:, 1]
 
     # Plot the distances regarding the number of points
     plt.plot(distances)
     plt.ylim([0, 0.6])
-    plt.title('Kneighbors-distance Graph',fontsize=20)
-    plt.xlabel('Data Points',fontsize=14)
-    plt.ylabel('Distance')
+    plt.title("Kneighbors-distance Graph", fontsize=20)
+    plt.xlabel("Data Points", fontsize=14)
+    plt.ylabel("Distance")
 
     plt.show()
     return
@@ -879,15 +882,19 @@ def _(mo):
 
 @app.cell
 def _(dbscan, final_df_filtered_sampled, plot_cluster_stats):
-    plot_cluster_stats(final_df_filtered_sampled, dbscan.labels_, ["recency", "frequency", "monetary", "average_review_score"], stats=['mean'])
+    plot_cluster_stats(
+        final_df_filtered_sampled,
+        dbscan.labels_,
+        ["recency", "frequency", "monetary", "average_review_score"],
+        stats=["mean"],
+    )
     return
 
 
 @app.cell
 def _(TSNE, pd, px):
     def plot_clusters_tsne(model, X_scaled):
-        """
-        Generates and displays a scatter plot of clusters using t-SNE for dimensionality reduction.
+        """Generates and displays a scatter plot of clusters using t-SNE for dimensionality reduction.
 
         Parameters:
         model: A pre-fitted model.
@@ -917,6 +924,7 @@ def _(TSNE, pd, px):
 
         # Display the plot
         return fig
+
     return (plot_clusters_tsne,)
 
 
@@ -951,7 +959,7 @@ def _(mo):
         r"""
     J'utilise un autre type d'algorithme, l'algorithme hiérarchique.
 
-    Le regroupement agglomératif est un algorithme de regroupement hiérarchique qui regroupe des points de données similaires. 
+    Le regroupement agglomératif est un algorithme de regroupement hiérarchique qui regroupe des points de données similaires.
 
     Il commence par chaque point de données comme un regroupement séparé puis combine ces regroupements de manière itérative en fonction de leur similarité jusqu'à ce que tous les points de données appartiennent à un seul regroupement.
     """
@@ -961,9 +969,8 @@ def _(mo):
 
 @app.cell
 def _(AgglomerativeClustering, rfm_4var_scaled_sampled):
-    # Initialisation de l'algorithme AgglomerativeClustering
-    # Nous allons utiliser la méthode 'ward' qui minimise la variance intra-cluster
-    agglo = AgglomerativeClustering(n_clusters=5, linkage='ward', compute_distances=True)
+    # Initiate the Agglomerative Clustering algorithm with ward method to minimize the variance within clusters
+    agglo = AgglomerativeClustering(n_clusters=5, linkage="ward", compute_distances=True)
 
     # Ajustement du modèle aux données
     clusters = agglo.fit_predict(rfm_4var_scaled_sampled)
@@ -975,16 +982,19 @@ def _(AgglomerativeClustering, rfm_4var_scaled_sampled):
 @app.cell
 def _(agglo, dendrogram, plt, rfm_4var_scaled_sampled):
     from scipy.cluster.hierarchy import linkage
+
     # Nous allons utiliser la méthode 'ward' pour le linkage
-    Z = linkage(rfm_4var_scaled_sampled, 'ward')
+    Z = linkage(rfm_4var_scaled_sampled, "ward")
 
     plt.title("Hierarchical Clustering Dendrogram")
     # plot the 5 levels of the dendrogram and give individual color per cluster
     plt.xlabel("Number of customers per clusters")
-    _threshold=0
+    _threshold = 0
     # Make the dendrogram
 
-    dendrogram(Z, labels=agglo.labels_, truncate_mode = 'lastp', p=5 , color_threshold=_threshold, above_threshold_color='grey')
+    dendrogram(
+        Z, labels=agglo.labels_, truncate_mode="lastp", p=5, color_threshold=_threshold, above_threshold_color="grey"
+    )
     # dendrogram(Z, labels=agglo.labels_, truncate_mode = 'level', p=2 , color_threshold=_threshold, above_threshold_color='grey')
     # Add horizontal line.
     # plt.axhline(y=_threshold, c='grey', lw=1, linestyle='dashed')
@@ -1002,7 +1012,12 @@ def _(agglo, rfm_4var_scaled_sampled, silhouette_score):
 
 @app.cell
 def _(agglo, final_df_filtered_sampled, plot_cluster_stats):
-    plot_cluster_stats(final_df_filtered_sampled, agglo.labels_, ["recency", "frequency", "monetary", "average_review_score"], stats=['median'])
+    plot_cluster_stats(
+        final_df_filtered_sampled,
+        agglo.labels_,
+        ["recency", "frequency", "monetary", "average_review_score"],
+        stats=["median"],
+    )
     return
 
 
@@ -1052,7 +1067,12 @@ def _(mo):
 
 @app.cell
 def _(final_df_filtered, kmeans_5_4var, plot_cluster_stats):
-    plot_cluster_stats(final_df_filtered, kmeans_5_4var.labels_, ["recency", "frequency", "monetary", "average_review_score"], stats=['mean'])
+    plot_cluster_stats(
+        final_df_filtered,
+        kmeans_5_4var.labels_,
+        ["recency", "frequency", "monetary", "average_review_score"],
+        stats=["mean"],
+    )
     return
 
 
@@ -1071,6 +1091,64 @@ def _(mo):
     - Groupe 3: Anciens clients qui pourraient revenir car satisfait (review = 5)
 
     - Groupe 4: 30% des clients sont nouveaux et dépensent peu (recency < 200 et monetary = 69€)
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""### Stabilité des clusters à l'initialisation""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Pour évaluer la stabilité des clusters identifiés par l'algorithme, je vais comparer la constitution des groupes obtenus à travers plusieurs exécutions. 
+
+    Pour ce faire, je vais fixer le nombre d'initialisations de l'algorithme à 1 (n_init=1) et supprimer le paramètre random_state afin d'introduire de la variabilité dans l'initialisation des centroïdes. 
+
+    Si l'inertie des groupes reste similaire à chaque itération, cela pourrait indiquer que les groupes trouvés ont une constitution similaire et sont donc stables.
+    """
+    )
+    return
+
+
+@app.cell
+def _(KMeans, plt, rfm_4var_scaled, sns):
+    # Parameters
+    n_initializations = 20
+    n_clusters = 5
+
+    # List to store inertias
+    inertias = []
+    for i in range(n_initializations):
+        # Initialize i models with the same number of clusters
+        kmeans = KMeans(n_clusters=n_clusters, n_init=1)
+        # Train the model and make predictions
+        kmeans.fit_predict(rfm_4var_scaled)
+        # Store the inertias in the list
+        inertias.append(kmeans.inertia_)
+
+    # Plot a barplot of computed inertias
+    sns.barplot(inertias)
+    # Add a line with the mean of inertias
+    sns.lineplot(x=[0, 20], y=sum(inertias) / len(inertias))
+    plt.title("Inertie des clusters avec différentes initialisation", fontweight="bold")
+    plt.xlabel("Itérations")
+    plt.ylabel("Inertie")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Différentes initialisations de KMeans conduisent à des clusters similaires. 
+
+    Ici, la plupart des initialisations ont des inerties similaires, ce qui suggère une certaine stabilité.
     """
     )
     return
