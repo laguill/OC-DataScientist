@@ -2,7 +2,7 @@
 authors = [{ name = "laguill", email = "guillaumelafon13@gmail.com" }]
 name = "P5_Segmentez_des_clients_dun_site_e-commerce"
 version = "0.1.0"
-description = "Analyser et anticiper la consommation énergétique de bâtiments publiques"
+description = "Segmentez des clients d'un site e-commerce"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
