@@ -1,9 +1,0 @@
-{
-    "files.autoSave": "onFocusChange",
-    "python.analysis.extraPaths": [
-        "${workspaceFolder}/_modules/"
-    ],
-    "terminal.integrated.fontLigatures.enabled": true,
-    "editor.fontLigatures": true,
-    "basedpyright.disableLanguageServices": true,
-}

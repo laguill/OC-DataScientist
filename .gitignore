@@ -185,7 +185,13 @@ cython_debug/
 .cursorindexingignore
 
 # data folder
-data/
+**data/raw/**
+!**data/raw/
+
+**/models/**
+!**/models/
+
+**/__marimo__/cache/**
 
 # zip
 *.zip
