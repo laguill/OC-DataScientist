@@ -188,10 +188,13 @@ cython_debug/
 **data/raw/**
 !**data/raw/
 
+**data/raw/Images/**
+
 **/models/**
 !**/models/
 
 **/__marimo__/cache/**
+!**/__marimo__/
 
 # zip
 *.zip
