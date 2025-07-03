@@ -93,6 +93,8 @@ def _():
     from tf_keras.preprocessing.image import img_to_array, load_img, ImageDataGenerator
     from tf_keras.utils import to_categorical
     from plot_keras_history import show_history, plot_history
+
+    import json
     return (
         Dense,
         Dropout,
@@ -111,6 +113,7 @@ def _():
         classification_report,
         confusion_matrix,
         img_to_array,
+        json,
         load_img,
         load_model,
         np,
@@ -301,7 +304,9 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Créons des listes pour stocker les scores des différents modèles, nous les réutiliserons pour faire un comparatif en fin d'étude.""")
+    mo.md(
+        r"""Créons des listes pour stocker les scores des différents modèles, nous les réutiliserons pour faire un comparatif en fin d'étude."""
+    )
     return
 
 
@@ -330,7 +335,9 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Pour la première approche, nous ferons une préparation initiale simple de l'ensemble des images avant une classification supervisée.""")
+    mo.md(
+        r"""Pour la première approche, nous ferons une préparation initiale simple de l'ensemble des images avant une classification supervisée."""
+    )
     return
 
 
@@ -387,12 +394,13 @@ def _(mo):
 
 
 @app.cell
-def _(X_test, X_train, X_val, prepare_images, time):
-    _start_time = time.time()
-    X_train_preprocessed = prepare_images(X_train)
-    X_val_preprocessed = prepare_images(X_val)
-    X_test_preprocessed = prepare_images(X_test)
-    time_preprocessed_method_1 = round(time.time() - _start_time, 0)
+def _(X_test, X_train, X_val, mo, prepare_images, time):
+    with mo.persistent_cache("preprocessed_image_model1"):
+        _start_time = time.time()
+        X_train_preprocessed = prepare_images(X_train)
+        X_val_preprocessed = prepare_images(X_val)
+        X_test_preprocessed = prepare_images(X_test)
+        time_preprocessed_method_1 = round(time.time() - _start_time, 0)
     return X_test_preprocessed, X_train_preprocessed, X_val_preprocessed
 
 
@@ -502,7 +510,6 @@ def _(
     os,
     tf,
     time,
-    time_path,
     training_time1_path,
     y_train,
     y_val,
@@ -523,8 +530,8 @@ def _(
         _start_time = time.time()
 
         # Exécuter le modèle sur le CPU ou GPU si dispo en remplaçant par gpu
-        device_name = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/CPU:0"
-    
+        device_name = "/GPU:0" if tf.config.list_physical_devices("GPU") else "/CPU:0"
+
         # Entraînement du modèle sur l'ensemble d'entraînement
         with tf.device(device_name):
             model1 = create_model()
@@ -542,20 +549,21 @@ def _(
         # Calculer la durée de la fonction
         time_training_method_1 = round(time.time() - _start_time, 0)
         history1 = _history.history
-    
+
         # Sauvegarde
         model1.save(model1_save_path)
         np.save(model1_log_path, history1)
-        with open(time_path, "w") as f:
+        with open(training_time1_path, "w") as f:
             json.dump({"training_time_m1": time_training_method_1}, f)
         print(f"Modèle entraîné en {time_training_method_1} secondes.")
-    
     return history1, model1, time_training_method_1
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Le processus continue pour chaque époque continue jusqu'à ce que les critères d'arrêt soient satisfaits. L'entraînement a été arrêté prématurément après la 17ème époque car il n'y avait pas d'amélioration de la perte de validation pendant 5 époques consécutives (selon les critères définis par EarlyStopping).""")
+    mo.md(
+        r"""Le processus continue pour chaque époque continue jusqu'à ce que les critères d'arrêt soient satisfaits. L'entraînement a été arrêté prématurément après la 17ème époque car il n'y avait pas d'amélioration de la perte de validation pendant 5 époques consécutives (selon les critères définis par EarlyStopping)."""
+    )
     return
 
 
@@ -590,11 +598,10 @@ def _(X_train_preprocessed, X_val_preprocessed, mo, model1, y_train, y_val):
     with mo.persistent_cache("evaluate_model1"):
         # Évaluation sur l'ensemble d'entraînement
         train_loss_m1, train_accuracy_m1 = model1.evaluate(X_train_preprocessed, y_train, verbose=True)
-    
-    
+
         # Évaluation sur l'ensemble de validation
         val_loss_m1, val_accuracy_m1 = model1.evaluate(X_val_preprocessed, y_val, verbose=True)
-    
+
     print(f"Training Accuracy: {train_accuracy_m1:.4f}")
     print()
     print(f"Validation Accuracy:  {val_accuracy_m1:.4f}")
@@ -636,11 +643,10 @@ def _(
     with mo.persistent_cache("evaluate_whole_model1"):
         # Charger les poids du meilleur modèle
         model1.load_weights(model1_save_path)
-    
+
         # Évaluation sur l'ensemble de validation
         val_loss_final_m1, val_accuracy_final_m1 = model1.evaluate(X_val_preprocessed, y_val, verbose=False)
-    
-    
+
         # Évaluation sur l'ensemble de test
         test_loss_m1, test_accuracy_m1 = model1.evaluate(X_test_preprocessed, y_test, verbose=False)
 
@@ -648,7 +654,6 @@ def _(
     print(f"Validation Loss: {val_loss_final_m1:.4f}")
     print(f"Test Accuracy: {test_accuracy_m1:.4f}")
     print(f"Test Loss: {test_loss_m1:.4f}")
-
     return
 
 
@@ -711,21 +716,21 @@ def _(
 ):
     with mo.persistent_cache("report_model1"):
         _categories = df["main_category"].unique().tolist()
-    
+
         # Obtenir les vraies et les prédictions du modèle
         _y_test_true = np.argmax(y_test, axis=1)
         _y_test_pred = np.argmax(model1.predict(X_test_preprocessed), axis=1)
-    
+
         # Créer la matrice de confusion
         _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
-    
+
         # Affichage sous forme de DataFrame avec labels explicites
         _df_conf_mat = pd.DataFrame(
             _conf_mat,
             index=[label for label in _categories],
             columns=[_i for _i in "0123456"],
         )
-    
+
         # Affichage de la heatmap
         plt.figure(figsize=(6, 4))
         sns.heatmap(_df_conf_mat, annot=True, cmap="Blues")
@@ -733,18 +738,16 @@ def _(
         plt.ylabel("Vérités")
         plt.title("Matrice de Confusion")
         plt.tight_layout()
-    
+
         _report_dict = classification_report(_y_test_true, _y_test_pred, target_names=_categories, output_dict=True)
         df_report_m1 = pd.DataFrame(_report_dict).transpose()
 
     # Affichage d'un rapport de classification complet
-    mo.vstack(
-        [
-            mo.md("# Evaluation model 1: Traitement simple des images"),
-            mo.hstack([mo.pyplot(plt)]),
-            mo.ui.table(df_report_m1)
-        ]
-    )
+    mo.vstack([
+        mo.md("# Evaluation model 1: Traitement simple des images"),
+        mo.hstack([mo.pyplot(plt)]),
+        mo.ui.table(df_report_m1),
+    ])
     return
 
 
@@ -784,7 +787,9 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Pour la seconde approche, nous ferons une data augmentation avec ImageDataGenerator pour le preprocessing de nos images.""")
+    mo.md(
+        r"""Pour la seconde approche, nous ferons une data augmentation avec ImageDataGenerator pour le preprocessing de nos images."""
+    )
     return
 
 
@@ -960,7 +965,7 @@ def _(
     train_flow,
 ):
     if os.path.exists(model2_save_path):
-        model2_= load_model(model2_save_path)
+        model2_ = load_model(model2_save_path)
         history2 = np.load(model2_log_path + ".npy", allow_pickle="True").item()
     else:
         _start_time = time.time()
@@ -1010,11 +1015,10 @@ def _(
     with mo.persistent_cache("evaluate_whole_model2"):
         # Charger les poids du meilleur modèle
         model2.load_weights(model2_save_path)
-    
+
         # Évaluation sur l'ensemble de validation
         val_loss_final_m2, val_accuracy_final_m2 = model2.evaluate(X_val_preprocessed_2, y_val, verbose=False)
-    
-    
+
         # Évaluation sur l'ensemble de test
         test_loss_m2, test_accuracy_m2 = model1.evaluate(X_test_preprocessed_2, y_test, verbose=False)
 
@@ -1022,7 +1026,6 @@ def _(
     print(f"Validation Loss           :  {val_loss_final_m2:.4f}")
     print(f"Test Accuracy             :  {test_accuracy_m2:.4f}")
     print(f"Test Loss                 :  {test_loss_m2:.4f}")
-
     return
 
 
@@ -1380,7 +1383,9 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Cette fois, nous allons reprendre l'approche précédente en ajoutant de la data augmentation intégrée au modèle.""")
+    mo.md(
+        r"""Cette fois, nous allons reprendre l'approche précédente en ajoutant de la data augmentation intégrée au modèle."""
+    )
     return
 
 
