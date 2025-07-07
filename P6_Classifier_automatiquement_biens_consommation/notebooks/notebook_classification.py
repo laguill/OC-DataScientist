@@ -1,7 +1,10 @@
 import marimo
 
-__generated_with = "0.14.9"
-app = marimo.App()
+__generated_with = "0.14.10"
+app = marimo.App(
+    app_title="P6 Classification supervisée",
+    auto_download=["html"],
+)
 
 
 @app.cell
@@ -59,8 +62,9 @@ def _():
 
 
     sns.set_theme()
-    import importlib
+    import json
     import os
+    import shutil
     import time
 
     from pathlib import Path
@@ -69,6 +73,7 @@ def _():
     import tensorflow as tf
 
     from PIL import Image, ImageFilter, ImageOps
+    from plot_keras_history import plot_history, show_history
     from sklearn import cluster, metrics
     from sklearn.cluster import KMeans
     from sklearn.decomposition import PCA
@@ -90,11 +95,8 @@ def _():
         Rescaling,
     )
     from tf_keras.models import Model, Sequential, load_model
-    from tf_keras.preprocessing.image import img_to_array, load_img, ImageDataGenerator
-    from tf_keras.utils import to_categorical
-    from plot_keras_history import show_history, plot_history
-
-    import json
+    from tf_keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
+    from tf_keras.utils import image_dataset_from_directory, to_categorical
     return (
         Dense,
         Dropout,
@@ -112,6 +114,7 @@ def _():
         VGG16,
         classification_report,
         confusion_matrix,
+        image_dataset_from_directory,
         img_to_array,
         json,
         load_img,
@@ -123,6 +126,7 @@ def _():
         plt,
         preprocess_input,
         show_history,
+        shutil,
         sns,
         tf,
         time,
@@ -311,20 +315,12 @@ def _(mo):
 
 
 @app.cell
-def _():
-    # Create lists to store scores
-    training_times = []
-    loss_validations = []
-    loss_tests = []
-    accuracy_validations = []
-    accuracy_tests = []
-    return (
-        accuracy_tests,
-        accuracy_validations,
-        loss_tests,
-        loss_validations,
-        training_times,
+def _(pd):
+    # Create dataframe to store scores
+    scores_df = pd.DataFrame(
+        columns=["methode", "training_times", "loss_validations", "loss_tests", "accuracy_validation", "accuracy_tests"]
     )
+    return (scores_df,)
 
 
 @app.cell(hide_code=True)
@@ -401,7 +397,12 @@ def _(X_test, X_train, X_val, mo, prepare_images, time):
         X_val_preprocessed = prepare_images(X_val)
         X_test_preprocessed = prepare_images(X_test)
         time_preprocessed_method_1 = round(time.time() - _start_time, 0)
-    return X_test_preprocessed, X_train_preprocessed, X_val_preprocessed
+    return (
+        X_test_preprocessed,
+        X_train_preprocessed,
+        X_val_preprocessed,
+        time_preprocessed_method_1,
+    )
 
 
 @app.cell(hide_code=True)
@@ -428,7 +429,7 @@ def _(EarlyStopping, ModelCheckpoint):
     # Chemin pour sauvegarder les meilleurs poids du modèle
     model1_save_path = "models/model1_best_weights.keras"
     model1_log_path = "models/model1_training_log"
-    training_time1_path = "model1_train_time.json"
+    training_time1_path = "models/model1_train_time.json"
 
     # Callback pour sauvegarder les meilleurs poids du modèle
     _checkpoint = ModelCheckpoint(
@@ -472,7 +473,7 @@ def _(mo):
 
     - **Trainable params** représente les paramètres que le modèle peut apprendre pendant l'entraînement, généralement les poids des couches ajouté (par exemple, les poids des couches Denses).
 
-    - **Non-trainable para** représentent les paramètres qui proviennent de couches pré-entraînées et qui ne seront pas modifiés pendant l'entraîneme (t les poids des couches de convolution de VGG).
+    - **Non-trainable para** représentent les paramètres qui proviennent de couches pré-entraînées et qui ne seront pas modifiés pendant l'entraînement (les poids des couches de convolution de VGG).
     """
     )
     return
@@ -497,17 +498,25 @@ def _(mo):
 
 
 @app.cell
+def _(tf):
+    # Exécuter le modèle sur le CPU ou GPU si dispo en remplaçant par gpu
+    device_name = "/GPU:0" if tf.config.list_physical_devices("GPU") else "/CPU:0"
+    return (device_name,)
+
+
+@app.cell
 def _(
+    Path,
     X_train_preprocessed,
     X_val_preprocessed,
     callbacks_list_m1,
     create_model,
+    device_name,
     json,
     load_model,
     model1_log_path,
     model1_save_path,
     np,
-    os,
     tf,
     time,
     training_time1_path,
@@ -529,10 +538,7 @@ def _(
         # Initialiser le temps au début de la fonction
         _start_time = time.time()
 
-        # Exécuter le modèle sur le CPU ou GPU si dispo en remplaçant par gpu
-        device_name = "/GPU:0" if tf.config.list_physical_devices("GPU") else "/CPU:0"
-
-        # Entraînement du modèle sur l'ensemble d'entraînement
+        # Entraînement du modèle sur des données
         with tf.device(device_name):
             model1 = create_model()
 
@@ -596,7 +602,7 @@ def _(mo):
 @app.cell
 def _(X_train_preprocessed, X_val_preprocessed, mo, model1, y_train, y_val):
     with mo.persistent_cache("evaluate_model1"):
-        # Évaluation sur l'ensemble d'entraînement
+        # Évaluation sur du dernier epoch
         train_loss_m1, train_accuracy_m1 = model1.evaluate(X_train_preprocessed, y_train, verbose=True)
 
         # Évaluation sur l'ensemble de validation
@@ -640,7 +646,7 @@ def _(
     y_test,
     y_val,
 ):
-    with mo.persistent_cache("evaluate_whole_model1"):
+    with mo.persistent_cache("evaluate_best_model1"):
         # Charger les poids du meilleur modèle
         model1.load_weights(model1_save_path)
 
@@ -654,7 +660,12 @@ def _(
     print(f"Validation Loss: {val_loss_final_m1:.4f}")
     print(f"Test Accuracy: {test_accuracy_m1:.4f}")
     print(f"Test Loss: {test_loss_m1:.4f}")
-    return
+    return (
+        test_accuracy_m1,
+        test_loss_m1,
+        val_accuracy_final_m1,
+        val_loss_final_m1,
+    )
 
 
 @app.cell(hide_code=True)
@@ -738,16 +749,21 @@ def _(
         plt.ylabel("Vérités")
         plt.title("Matrice de Confusion")
         plt.tight_layout()
+        ax = plt.gca()  # Get the current Axes
 
         _report_dict = classification_report(_y_test_true, _y_test_pred, target_names=_categories, output_dict=True)
         df_report_m1 = pd.DataFrame(_report_dict).transpose()
 
     # Affichage d'un rapport de classification complet
-    mo.vstack([
-        mo.md("# Evaluation model 1: Traitement simple des images"),
-        mo.hstack([mo.pyplot(plt)]),
-        mo.ui.table(df_report_m1),
-    ])
+    # mo.vstack([
+    #     mo.md("**Evaluation model 1: Traitement simple des images**"),
+    #     mo.hstack([ax])
+    #     mo.ui.table(df_report_m1),
+    # ])
+    print("**Evaluation model 1: Traitement simple des images**")
+
+    print(df_report_m1)
+    plt.show()
     return
 
 
@@ -759,29 +775,33 @@ def _(mo):
 
 @app.cell
 def _(
-    accuracy_test,
-    accuracy_tests,
-    accuracy_validation,
-    accuracy_validations,
-    loss_test,
-    loss_tests,
-    loss_validation,
-    loss_validations,
-    time_prepare_method_1,
+    scores_df,
+    test_accuracy_m1,
+    test_loss_m1,
+    time_preprocessed_method_1,
     time_training_method_1,
-    training_times,
+    val_accuracy_final_m1,
+    val_loss_final_m1,
 ):
-    training_times.append(time_prepare_method_1 + time_training_method_1)
-    loss_validations.append(loss_validation)
-    loss_tests.append(loss_test)
-    accuracy_validations.append(accuracy_validation)
-    accuracy_tests.append(accuracy_test)
+    _duration = time_preprocessed_method_1 + time_training_method_1
+
+    _new_row = {
+        "methode": "functional",
+        "training_times": _duration,
+        "loss_validations": val_loss_final_m1,
+        "loss_tests": test_loss_m1,
+        "accuracy_validation": val_accuracy_final_m1,
+        "accuracy_tests": test_accuracy_m1,
+    }
+
+    scores_df.loc[0] = _new_row
+    scores_df
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Seconde approche""")
+    mo.md(r"""## Seconde approche: Data generator""")
     return
 
 
@@ -801,8 +821,8 @@ def _(mo):
 
 @app.cell
 def _(df, train_test_split):
-    data_1, data_test = train_test_split(df, test_size=0.15, random_state=42)
-    return data_1, data_test
+    data_train, data_test = train_test_split(df, test_size=0.15, random_state=42)
+    return data_test, data_train
 
 
 @app.cell(hide_code=True)
@@ -830,15 +850,15 @@ def _(ImageDataGenerator, preprocess_input):
 
 @app.cell
 def _(
-    data_1,
     data_test,
+    data_train,
     image_data_generator_test,
     image_data_generator_train,
     time,
 ):
     _start_time = time.time()
     train_flow = image_data_generator_train.flow_from_dataframe(
-        data_1,
+        data_train,
         directory="",
         x_col="image_path",
         y_col="main_category",
@@ -852,30 +872,30 @@ def _(
         subset="training",
     )
     validation_flow = image_data_generator_train.flow_from_dataframe(
-        data_1,
+        data_train,
         directory="",
-        x_col="image",
-        y_col="category",
+        x_col="image_path",
+        y_col="main_category",
         weight_col=None,
         target_size=(224, 224),
         classes=None,
         class_mode="categorical",
         batch_size=32,
         shuffle=True,
-        seed=8,
+        seed=42,
         subset="validation",
     )
     test_flow = image_data_generator_test.flow_from_dataframe(
         data_test,
         directory="",
-        x_col="image",
-        y_col="category",
+        x_col="image_path",
+        y_col="main_category",
         weight_col=None,
         target_size=(224, 224),
         classes=None,
         class_mode="categorical",
         batch_size=32,
-        shuffle=True,
+        shuffle=False,
         seed=42,
         subset=None,
     )
@@ -921,15 +941,37 @@ def _(mo):
 
 
 @app.cell
-def _(EarlyStopping, ModelCheckpoint, create_model, tf):
-    with tf.device("/cpu:0"):
-        _model2 = create_model()
+def _(EarlyStopping, ModelCheckpoint):
+    # Chemin pour sauvegarder les meilleurs poids du modèle
     model2_save_path = "models/model2_best_weights.keras"
     model2_log_path = "models/model2_training_log"
-    _checkpoint = ModelCheckpoint(model2_save_path, monitor="val_loss", verbose=1, save_best_only=True, mode="min")
-    _early_stopping = EarlyStopping(monitor="val_loss", mode="min", verbose=1, patience=5)
-    callbacks_list_1 = [_checkpoint, _early_stopping]
-    return callbacks_list_1, model2_log_path, model2_save_path
+    training_time2_path = "models/model2_train_time.json"
+
+    # Callback pour sauvegarder les meilleurs poids du modèle
+    _checkpoint = ModelCheckpoint(
+        model2_save_path,
+        monitor="val_loss",  # Surveiller la perte de validation
+        verbose=1,  # Afficher les messages de sauvegarde
+        save_best_only=True,  # Sauvegarder uniquement les meilleurs poids
+        mode="min",  # Mode de minimisation de la perte
+    )
+
+    # Callback pour arrêter l'entraînement si la performance ne s'améliore pas
+    _early_stopping = EarlyStopping(
+        monitor="val_loss",  # Surveiller la perte de validation
+        mode="min",  # Mode de minimisation de la perte
+        verbose=1,  # Afficher les messages d'arrêt précoce
+        patience=5,  # Nombre d'époques sans amélioration avant l'arrêt
+    )
+
+    # Liste des callbacks à utiliser pendant l'entraînement
+    callbacks_list_m2 = [_checkpoint, _early_stopping]
+    return (
+        callbacks_list_m2,
+        model2_log_path,
+        model2_save_path,
+        training_time2_path,
+    )
 
 
 @app.cell(hide_code=True)
@@ -952,30 +994,61 @@ def _(mo):
 
 @app.cell
 def _(
-    callbacks_list_1,
+    Path,
+    callbacks_list_m2,
     create_model,
+    device_name,
+    json,
     load_model,
     model2_log_path,
     model2_save_path,
     np,
-    os,
     test_flow,
     tf,
     time,
     train_flow,
+    training_time2_path,
 ):
+    # Vérifie si le modèle a déjà été entraîné (et sauvegardé)
+    # Si c'est le cas, charge le modèle à partir de la sauvegarde
+    # Utilisé principalement pour économiser du temps lors de la réexécution du notebook
     if os.path.exists(model2_save_path):
-        model2_ = load_model(model2_save_path)
-        history2 = np.load(model2_log_path + ".npy", allow_pickle="True").item()
+        # Ouvrir le modèle à partir du fichier
+        model2 = load_model(model2_save_path)
+
+        # Ouvrir le fichier de log d'entraînement
+        history2 = np.load(model2_log_path + ".npy", allow_pickle=True).item()
+
+        with open(training_time2_path, "r") as _f:
+            time_training_method_2 = json.load(_f)["training_time_m2"]
+        print("Modèle chargé depuis les fichiers.")
     else:
+        # Initialiser le temps au début de la fonction
         _start_time = time.time()
-        with tf.device("/cpu:0"):
+
+        # Entraînement du modèle sur l'ensemble des données
+        with tf.device(device_name):
             model2 = create_model()
-            history2 = model2.fit(
-                train_flow, epochs=50, batch_size=64, callbacks=callbacks_list_1, validation_data=test_flow, verbose=1
+
+            _history = model2.fit(
+                train_flow,
+                epochs=50,
+                batch_size=64,
+                callbacks=callbacks_list_m2,
+                validation_data=test_flow,
+                verbose=1,
             )
-            np.save(model2_log_path, history2.history)
+
+        # Calculer la durée de la fonction
         time_training_method_2 = round(time.time() - _start_time, 0)
+        history2 = _history.history
+
+        # Sauvegarde
+        model2.save(model2_save_path)
+        np.save(model2_log_path, history2)
+        with open(training_time2_path, "w") as _f:
+            json.dump({"training_time_m2": time_training_method_2}, _f)
+        print(f"Modèle entraîné en {time_training_method_2} secondes.")
     return history2, model2, time_training_method_2
 
 
@@ -992,41 +1065,40 @@ def _(mo):
 
 
 @app.cell
-def _(model2, train_flow, validation_flow):
-    loss_1, accuracy_1 = model2.evaluate(train_flow, verbose=True)
-    print("Training Accuracy: {:.4f}".format(accuracy_1))
+def _(mo, model2, train_flow, validation_flow):
+    with mo.persistent_cache("evaluate_last_model2"):
+        train_loss_m2, train_accuracy_m2 = model2.evaluate(train_flow, verbose=True)
+
+        val_loss_m2, val_accuracy_m2 = model2.evaluate(validation_flow, verbose=True)
+
+    print(f"Training Accuracy: {train_accuracy_m2:.4f}")
     print()
-    loss_1, accuracy_1 = model2.evaluate(validation_flow, verbose=True)
-    print("Validation Accuracy:  {:.4f}".format(accuracy_1))
+    print(f"Validation Accuracy: {val_accuracy_m2:.4f}")
     return
 
 
 @app.cell
-def _(
-    X_test_preprocessed_2,
-    X_val_preprocessed_2,
-    mo,
-    model1,
-    model2,
-    model2_save_path,
-    y_test,
-    y_val,
-):
-    with mo.persistent_cache("evaluate_whole_model2"):
+def _(mo, model2, model2_save_path, test_flow, validation_flow):
+    with mo.persistent_cache("evaluate_best_model2"):
         # Charger les poids du meilleur modèle
         model2.load_weights(model2_save_path)
 
         # Évaluation sur l'ensemble de validation
-        val_loss_final_m2, val_accuracy_final_m2 = model2.evaluate(X_val_preprocessed_2, y_val, verbose=False)
+        val_loss_final_m2, val_accuracy_final_m2 = model2.evaluate(validation_flow, verbose=False)
 
         # Évaluation sur l'ensemble de test
-        test_loss_m2, test_accuracy_m2 = model1.evaluate(X_test_preprocessed_2, y_test, verbose=False)
+        test_loss_m2, test_accuracy_m2 = model2.evaluate(test_flow, verbose=False)
 
-    print(f"Validation Accuracy       :  {val_accuracy_final_m2:.4f}")
-    print(f"Validation Loss           :  {val_loss_final_m2:.4f}")
-    print(f"Test Accuracy             :  {test_accuracy_m2:.4f}")
-    print(f"Test Loss                 :  {test_loss_m2:.4f}")
-    return
+    print(f"Validation Accuracy: {val_accuracy_final_m2:.4f}")
+    print(f"Validation Loss: {val_loss_final_m2:.4f}")
+    print(f"Test Accuracy: {test_accuracy_m2:.4f}")
+    print(f"Test Loss: {test_loss_m2:.4f}")
+    return (
+        test_accuracy_m2,
+        test_loss_m2,
+        val_accuracy_final_m2,
+        val_loss_final_m2,
+    )
 
 
 @app.cell(hide_code=True)
@@ -1044,18 +1116,57 @@ def _(history2, plot_history, plt, show_history):
     return
 
 
-app._unparsable_cell(
-    r"""
+@app.cell
+def _(
+    classification_report,
+    confusion_matrix,
+    mo,
+    model2,
+    np,
+    pd,
+    plt,
+    sns,
+    test_flow,
+):
+    with mo.persistent_cache("report_model2"):
+        # Important : shuffle=False dans test_flow lors de sa création sinon erreur lors de la confusion matrix
 
-    _y_test_true = np.argmax(y_test, axis=1)
-    _y_test_pred = np.argmax(model2.predict(X_test_1), axis=1)
-    _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
-    _df_conf_mat = pd.DataFrame(_conf_mat, index=[label for label in  _categories, columns=[_i for _i in \"0123456\"])
-    plt.figure(figsize=(6, 4))
-    sns.heatmap(_df_conf_mat, annot=True, cmap=\"Blues\")
-    """,
-    name="_"
-)
+        # Prédictions du modèle
+        _y_pred_proba = model2.predict(test_flow)
+        _y_pred = np.argmax(_y_pred_proba, axis=1)
+
+        # Valeurs réelles
+        _y_true = test_flow.classes
+
+        # Récupérer le mapping index <-> nom de classe
+        _labels_ordered = list(test_flow.class_indices.keys())
+
+        # Créer une matrice de confusion avec noms explicites
+        _conf_mat = confusion_matrix(_y_true, _y_pred)
+        _df_conf_mat = pd.DataFrame(_conf_mat, index=_labels_ordered, columns=[_i for _i in "0123456"])
+
+        # Heatmap de la matrice de confusion
+        plt.figure(figsize=(6, 4))
+        _ax = sns.heatmap(_df_conf_mat, annot=True, cmap="Blues", fmt="d")
+        plt.xlabel("Prédictions")
+        plt.ylabel("Vérités")
+        plt.title("Matrice de Confusion")
+        plt.tight_layout()
+
+        # Rapport de classification par classe
+        _report_dict = classification_report(_y_true, _y_pred, target_names=_labels_ordered, output_dict=True)
+        df_report_m2 = pd.DataFrame(_report_dict).transpose()
+
+    # mo.vstack([
+    #     mo.md("**Evaluation model 2: Data Augmentation**"),
+    #     mo.hstack([_ax]),
+    #     mo.ui.table(df_report_m2),
+    # ])
+    print("**Evaluation model 2: Data Augmentation**")
+
+    print(df_report_m2)
+    plt.show()
+    return
 
 
 @app.cell(hide_code=True)
@@ -1066,29 +1177,33 @@ def _(mo):
 
 @app.cell
 def _(
-    accuracy_test_1,
-    accuracy_tests,
-    accuracy_validation_1,
-    accuracy_validations,
-    loss_test_1,
-    loss_tests,
-    loss_validation_1,
-    loss_validations,
+    scores_df,
+    test_accuracy_m2,
+    test_loss_m2,
     time_prepare_method_2,
     time_training_method_2,
-    training_times,
+    val_accuracy_final_m2,
+    val_loss_final_m2,
 ):
-    training_times.append(time_prepare_method_2 + time_training_method_2)
-    loss_validations.append(loss_validation_1)
-    loss_tests.append(loss_test_1)
-    accuracy_validations.append(accuracy_validation_1)
-    accuracy_tests.append(accuracy_test_1)
+    _duration = time_prepare_method_2 + time_training_method_2
+
+    _new_row = {
+        "methode": "data generator",
+        "training_times": _duration,
+        "loss_validations": val_loss_final_m2,
+        "loss_tests": test_loss_m2,
+        "accuracy_validation": val_accuracy_final_m2,
+        "accuracy_tests": test_accuracy_m2,
+    }
+
+    scores_df.loc[1] = _new_row
+    scores_df
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Troisième approche""")
+    mo.md(r"""## Troisième approche: Dataset sans dataaugmentation""")
     return
 
 
@@ -1107,29 +1222,38 @@ def _(mo):
 
 
 @app.cell
-def _(df, train_test_split):
-    data_2, data_test_1 = train_test_split(df, test_size=0.15, random_state=42)
-    return data_2, data_test_1
+def _(Path, df, os, shutil, train_test_split):
+    # Sépare le DataFrame 'df' en deux ensembles : 85% pour l'entraînement, 15% pour le test
+    _data, _data_test = train_test_split(df, test_size=0.15, random_state=42)
 
+    # Définition des chemins vers les dossiers d'images d'entraînement et de test
+    path_train = "data/raw/Images_train/"
+    path_test = "data/raw/Images_test/"
 
-@app.cell
-def _(data_2, data_test_1, os, shutil):
-    path_train = "./data/images_train/"
-    path_test = "./data/images_test/"
+    # create image_train dir
     if not os.path.exists(path_train):
         os.makedirs(path_train)
-        for idx, ser in data_2.iterrows():
-            if not os.path.exists(path_train + ser["category"]):
-                os.makedirs(path_train + ser["category"])
-            image_name = ser["image"].split("/")[-1]
-            shutil.copy(ser["image"], path_train + ser["category"] + "/" + image_name)
-    if not os.path.exists(path_test):
-        os.makedirs(path_test)
-        for idx, ser in data_test_1.iterrows():
-            if not os.path.exists(path_test + ser["category"]):
-                os.makedirs(path_test + ser["category"])
-            image_name = ser["image"].split("/")[-1]
-            shutil.copy(ser["image"], path_test + ser["category"] + "/" + image_name)
+        # Parcourir les données d'entraînement
+        for idx, ser in _data.iterrows():
+            # Créer un sous-dossier pour chaque catégorie principale si nécessaire
+            category_path = os.path.join(path_train, ser["main_category"])
+            if not os.path.exists(category_path):
+                os.makedirs(category_path)
+
+            # Copier l'image dans le bon dossier
+            image_name = ser["image"]
+            shutil.copy(ser["image_path"], os.path.join(category_path, image_name))
+
+    # Parcourir les données de test
+    for idx, ser in _data_test.iterrows():
+        # Créer un sous-dossier pour chaque catégorie principale si nécessaire
+        category_path = os.path.join(path_test, ser["main_category"])
+        if not os.path.exists(category_path):
+            os.makedirs(category_path)
+
+        # Copier l'image dans le bon dossier
+        image_name = ser["image"]
+        shutil.copy(ser["image_path"], os.path.join(category_path, image_name))
     return path_test, path_train
 
 
@@ -1150,7 +1274,7 @@ def _(image_dataset_from_directory, np, path_test, path_train, time):
         batch_size=32,
         image_size=(224, 224),
         shuffle=True,
-        seed=8,
+        seed=42,
         validation_split=0.25,
         subset="training",
     )
@@ -1162,7 +1286,7 @@ def _(image_dataset_from_directory, np, path_test, path_train, time):
         batch_size=32,
         image_size=(224, 224),
         shuffle=True,
-        seed=8,
+        seed=42,
         validation_split=0.25,
         subset="validation",
     )
@@ -1174,12 +1298,17 @@ def _(image_dataset_from_directory, np, path_test, path_train, time):
         batch_size=32,
         image_size=(224, 224),
         shuffle=True,
-        seed=8,
+        seed=42,
         validation_split=0,
         subset=None,
     )
     time_prepare_method_3 = np.round(time.time() - _beginning_time, 0)
-    return dataset_train, dataset_validation, time_prepare_method_3
+    return (
+        dataset_test,
+        dataset_train,
+        dataset_validation,
+        time_prepare_method_3,
+    )
 
 
 @app.cell(hide_code=True)
@@ -1202,15 +1331,37 @@ def _(mo):
 
 
 @app.cell
-def _(EarlyStopping, ModelCheckpoint, create_model, tf):
-    with tf.device("/gpu:0"):
-        model3 = create_model()
-    model3_save_path = "./models/model3_best_weights.keras"
-    model3_log_path = "./models/model3_training_log"
-    _checkpoint = ModelCheckpoint(model3_save_path, monitor="val_loss", verbose=1, save_best_only=True, mode="min")
-    _early_stopping = EarlyStopping(monitor="val_loss", mode="min", verbose=1, patience=5)
-    callbacks_list_2 = [_checkpoint, _early_stopping]
-    return callbacks_list_2, model3_log_path, model3_save_path
+def _(EarlyStopping, ModelCheckpoint):
+    # Chemin pour sauvegarder les meilleurs poids du modèle
+    model3_save_path = "models/model3_best_weights.keras"
+    model3_log_path = "models/model3_training_log"
+    training_time3_path = "models/model3_train_time.json"
+
+    # Callback pour sauvegarder les meilleurs poids du modèle
+    _checkpoint = ModelCheckpoint(
+        model3_save_path,
+        monitor="val_loss",  # Surveiller la perte de validation
+        verbose=1,  # Afficher les messages de sauvegarde
+        save_best_only=True,  # Sauvegarder uniquement les meilleurs poids
+        mode="min",  # Mode de minimisation de la perte
+    )
+
+    # Callback pour arrêter l'entraînement si la performance ne s'améliore pas
+    _early_stopping = EarlyStopping(
+        monitor="val_loss",  # Surveiller la perte de validation
+        mode="min",  # Mode de minimisation de la perte
+        verbose=1,  # Afficher les messages d'arrêt précoce
+        patience=5,  # Nombre d'époques sans amélioration avant l'arrêt
+    )
+
+    # Liste des callbacks à utiliser pendant l'entraînement
+    callbacks_list_m3 = [_checkpoint, _early_stopping]
+    return (
+        callbacks_list_m3,
+        model3_log_path,
+        model3_save_path,
+        training_time3_path,
+    )
 
 
 @app.cell(hide_code=True)
@@ -1233,34 +1384,62 @@ def _(mo):
 
 @app.cell
 def _(
-    callbacks_list_2,
+    Path,
+    callbacks_list_m3,
+    create_model,
     dataset_train,
     dataset_validation,
+    device_name,
+    json,
     load_model,
     model3_log_path,
     model3_save_path,
     np,
-    os,
     tf,
     time,
+    training_time3_path,
 ):
+    # Vérifie si le modèle a déjà été entraîné (et sauvegardé)
+    # Si c'est le cas, charge le modèle à partir de la sauvegarde
+    # Utilisé principalement pour économiser du temps lors de la réexécution du notebook
     if os.path.exists(model3_save_path):
-        model3_1 = load_model(model3_save_path)
-        history3 = np.load(model3_log_path + ".npy", allow_pickle="True").item()
+        # Ouvrir le modèle à partir du fichier
+        model3 = load_model(model3_save_path)
+
+        # Ouvrir le fichier de log d'entraînement
+        history3 = np.load(model3_log_path + ".npy", allow_pickle=True).item()
+
+        with open(training_time3_path, "r") as _f:
+            time_training_method_3 = json.load(_f)["training_time_m3"]
+        print("Modèle chargé depuis les fichiers.")
     else:
-        _beginning_time = time.time()
-        with tf.device("/gpu:0"):
-            history3 = model3_1.fit(
+        # Initialiser le temps au début de la fonction
+        _start_time = time.time()
+
+        # Entraînement du modèle sur l'ensemble des données
+        with tf.device(device_name):
+            model3 = create_model()
+
+            _history = model3.fit(
                 dataset_train,
                 epochs=50,
                 batch_size=64,
-                callbacks=callbacks_list_2,
+                callbacks=callbacks_list_m3,
                 validation_data=dataset_validation,
                 verbose=1,
             )
-            np.save(model3_log_path, history3.history)
-        time_training_method_3 = np.round(time.time() - _beginning_time, 0)
-    return history3, model3_1, time_training_method_3
+
+        # Calculer la durée de la fonction
+        time_training_method_3 = round(time.time() - _start_time, 0)
+        history3 = _history.history
+
+        # Sauvegarde
+        model3.save(model3_save_path)
+        np.save(model3_log_path, history3)
+        with open(training_time3_path, "w") as _f:
+            json.dump({"training_time_m3": time_training_method_3}, _f)
+        print(f"Modèle entraîné en {time_training_method_3} secondes.")
+    return history3, model3, time_training_method_3
 
 
 @app.cell(hide_code=True)
@@ -1276,38 +1455,39 @@ def _(mo):
 
 
 @app.cell
-def _(dataset_train, dataset_validation, model3_1):
-    loss_2, accuracy_2 = model3_1.evaluate(dataset_train, verbose=True)
-    print("Training Accuracy: {:.4f}".format(accuracy_2))
+def _(dataset_train, dataset_validation, mo, model3):
+    with mo.persistent_cache("evaluate_last_model3"):
+        train_loss_m3, train_accuracy_m3 = model3.evaluate(dataset_train, verbose=True)
+
+        val_loss_m3, val_accuracy_m3 = model3.evaluate(dataset_validation, verbose=True)
+
+    print(f"Training Accuracy: {train_accuracy_m3:.4f}")
     print()
-    loss_2, accuracy_2 = model3_1.evaluate(dataset_validation, verbose=True)
-    print("Validation Accuracy:  {:.4f}".format(accuracy_2))
-    return accuracy_2, loss_2
+    print(f"Validation Accuracy: {val_accuracy_m3:.4f}")
+    return
 
 
 @app.cell
-def _(
-    X_test_1,
-    X_val_1,
-    accuracy_2,
-    loss_2,
-    model3_1,
-    model3_save_path,
-    y_test,
-    y_val,
-):
-    model3_1.load_weights(model3_save_path)
-    loss_validation_2, accuracy_validation_2 = model3_1.evaluate(X_val_1, y_val, verbose=False)
-    print("Validation Accuracy       :  {:.4f}".format(accuracy_2))
-    print("Validation Loss           :  {:.4f}".format(loss_2))
-    loss_test_2, accuracy_test_2 = model3_1.evaluate(X_test_1, y_test, verbose=False)
-    print("Test Accuracy             :  {:.4f}".format(accuracy_2))
-    print("Test Loss                 :  {:.4f}".format(loss_2))
+def _(dataset_test, dataset_validation, mo, model3, model3_save_path):
+    with mo.persistent_cache("evaluate_best_model3"):
+        # Charger les poids du meilleur modèle
+        model3.load_weights(model3_save_path)
+
+        # Évaluation sur l'ensemble de validation
+        val_loss_final_m3, val_accuracy_final_m3 = model3.evaluate(dataset_validation, verbose=False)
+
+        # Évaluation sur l'ensemble de test
+        test_loss_m3, test_accuracy_m3 = model3.evaluate(dataset_test, verbose=False)
+
+    print(f"Validation Accuracy: {val_accuracy_final_m3:.4f}")
+    print(f"Validation Loss: {val_loss_final_m3:.4f}")
+    print(f"Test Accuracy: {test_accuracy_m3:.4f}")
+    print(f"Test Loss: {test_loss_m3:.4f}")
     return (
-        accuracy_test_2,
-        accuracy_validation_2,
-        loss_test_2,
-        loss_validation_2,
+        test_accuracy_m3,
+        test_loss_m3,
+        val_accuracy_final_m3,
+        val_loss_final_m3,
     )
 
 
@@ -1321,29 +1501,71 @@ def _(mo):
 def _(history3, plot_history, plt, show_history):
     # Plot the history of training
     show_history(history3)
-    plot_history(history3, path="./models/model3_history.png")
+    plot_history(history3, path="models/model3_history.png")
     plt.close()
     return
 
 
 @app.cell
 def _(
-    X_test_1,
-    categories_list_1,
+    classification_report,
     confusion_matrix,
-    model3_1,
+    dataset_test,
+    mo,
+    model3,
     np,
     pd,
     plt,
     sns,
-    y_test,
+    tf,
 ):
-    _y_test_true = np.argmax(y_test, axis=1)
-    _y_test_pred = np.argmax(model3_1.predict(X_test_1), axis=1)
-    _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
-    _df_conf_mat = pd.DataFrame(_conf_mat, index=[label for label in categories_list_1], columns=[_i for _i in "0123456"])
-    plt.figure(figsize=(6, 4))
-    sns.heatmap(_df_conf_mat, annot=True, cmap="Blues")
+    with mo.persistent_cache("report_model3"):
+        # Extraire les images et labels du dataset
+        _X_test, _y_test_true = [], []
+        for images, labels in dataset_test:
+            _X_test.append(images)
+            _y_test_true.append(labels)
+
+        _X_test = tf.concat(_X_test, axis=0)
+        _y_test_true = tf.argmax(tf.concat(_y_test_true, axis=0), axis=1).numpy()
+
+        # Prédictions
+        _y_test_pred = np.argmax(model3.predict(_X_test), axis=1)
+
+        # Créer une matrice de confusion avec noms explicites
+        _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
+        _df_conf_mat = pd.DataFrame(
+            _conf_mat,
+            index=dataset_test.class_names,
+            columns=[_i for _i in "0123456"],
+        )
+
+        # Heatmap de la matrice de confusion
+        plt.figure(figsize=(6, 4))
+        _ax = sns.heatmap(_df_conf_mat, annot=True, cmap="Blues", fmt="d")
+        plt.xlabel("Prédictions")
+        plt.ylabel("Vérités")
+        plt.title("Matrice de Confusion")
+        plt.tight_layout()
+
+        # Rapport de classification par classe
+        _report_dict = classification_report(
+            _y_test_true,
+            _y_test_pred,
+            target_names=dataset_test.class_names,
+            output_dict=True,
+        )
+        df_report_m3 = pd.DataFrame(_report_dict).transpose()
+
+    # mo.vstack([
+    #     mo.md("**Evaluation model 3: Dataset**"),
+    #     mo.hstack([_ax]),
+    #     mo.ui.table(df_report_m3),
+    # ])
+    print("**Evaluation model 3: Dataset**")
+
+    print(df_report_m3)
+    plt.show()
     return
 
 
@@ -1355,29 +1577,33 @@ def _(mo):
 
 @app.cell
 def _(
-    accuracy_test_2,
-    accuracy_tests,
-    accuracy_validation_2,
-    accuracy_validations,
-    loss_test_2,
-    loss_tests,
-    loss_validation_2,
-    loss_validations,
+    scores_df,
+    test_accuracy_m3,
+    test_loss_m3,
     time_prepare_method_3,
     time_training_method_3,
-    training_times,
+    val_accuracy_final_m3,
+    val_loss_final_m3,
 ):
-    training_times.append(time_prepare_method_3 + time_training_method_3)
-    loss_validations.append(loss_validation_2)
-    loss_tests.append(loss_test_2)
-    accuracy_validations.append(accuracy_validation_2)
-    accuracy_tests.append(accuracy_test_2)
+    _duration = time_prepare_method_3 + time_training_method_3
+
+    _new_row = {
+        "methode": "dataset sans augmentation",
+        "training_times": _duration,
+        "loss_validations": val_loss_final_m3,
+        "loss_tests": test_loss_m3,
+        "accuracy_validation": val_accuracy_final_m3,
+        "accuracy_tests": test_accuracy_m3,
+    }
+
+    scores_df.loc[2] = _new_row
+    scores_df
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Quatrième approche""")
+    mo.md(r"""## Quatrième approche: Dataset avec data augmentation""")
     return
 
 
@@ -1423,7 +1649,7 @@ def _(mo):
 
     Ainsi, nous modifierons ce que nous avons fait précédemment comme suit :
 
-    - La première couche gérera la dat augmentation, avec :
+    - La première couche gérera la data augmentation, avec :
       - un retournement aléatoire
       - une rotation aléatoire
       - un zoom aléatoire
@@ -1437,46 +1663,37 @@ def _(mo):
 
 
 @app.cell
-def _(
-    Dense,
-    Dropout,
-    EarlyStopping,
-    GlobalAveragePooling2D,
-    ModelCheckpoint,
-    RandomFlip,
-    RandomRotation,
-    RandomZoom,
-    Rescaling,
-    Sequential,
-    VGG16,
-    tf,
-):
-    with tf.device("/gpu:0"):
-        data_augmentation = Sequential([
-            RandomFlip("horizontal", input_shape=(224, 224, 3)),
-            RandomRotation(0.1),
-            RandomZoom(0.1),
-        ])
-        model4 = VGG16(include_top=False, weights="imagenet", input_shape=(224, 224, 3))
-        for layer in model4.layers:
-            layer.trainable = False
-        model4 = Sequential([
-            data_augmentation,
-            Rescaling(1.0 / 127.5, offset=-1),
-            model4,
-            GlobalAveragePooling2D(),
-            Dense(256, activation="relu"),
-            Dropout(0.5),
-            Dense(7, activation="softmax"),
-        ])
-        model4.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-        print(model4.summary())
-    model4_save_path = "./models/model4_best_weights.keras"
-    model4_log_path = "./models/model4_training_log"
-    _checkpoint = ModelCheckpoint(model4_save_path, monitor="val_loss", verbose=1, save_best_only=True, mode="min")
-    _early_stopping = EarlyStopping(monitor="val_loss", mode="min", verbose=1, patience=5)
-    callbacks_list_3 = [_checkpoint, _early_stopping]
-    return callbacks_list_3, model4_log_path, model4_save_path
+def _(EarlyStopping, ModelCheckpoint):
+    # Chemin pour sauvegarder les meilleurs poids du modèle
+    model4_save_path = "models/model4_best_weights.keras"
+    model4_log_path = "models/model4_training_log"
+    training_time4_path = "models/model4_train_time.json"
+
+    # Callback pour sauvegarder les meilleurs poids du modèle
+    _checkpoint = ModelCheckpoint(
+        model4_save_path,
+        monitor="val_loss",  # Surveiller la perte de validation
+        verbose=1,  # Afficher les messages de sauvegarde
+        save_best_only=True,  # Sauvegarder uniquement les meilleurs poids
+        mode="min",  # Mode de minimisation de la perte
+    )
+
+    # Callback pour arrêter l'entraînement si la performance ne s'améliore pas
+    _early_stopping = EarlyStopping(
+        monitor="val_loss",  # Surveiller la perte de validation
+        mode="min",  # Mode de minimisation de la perte
+        verbose=1,  # Afficher les messages d'arrêt précoce
+        patience=5,  # Nombre d'époques sans amélioration avant l'arrêt
+    )
+
+    # Liste des callbacks à utiliser pendant l'entraînement
+    callbacks_list_m4 = [_checkpoint, _early_stopping]
+    return (
+        callbacks_list_m4,
+        model4_log_path,
+        model4_save_path,
+        training_time4_path,
+    )
 
 
 @app.cell(hide_code=True)
@@ -1499,34 +1716,91 @@ def _(mo):
 
 @app.cell
 def _(
-    callbacks_list_3,
+    Dense,
+    Dropout,
+    GlobalAveragePooling2D,
+    Path,
+    RandomFlip,
+    RandomRotation,
+    RandomZoom,
+    Rescaling,
+    Sequential,
+    VGG16,
+    callbacks_list_m4,
     dataset_train,
     dataset_validation,
+    device_name,
+    json,
     load_model,
     model4_log_path,
     model4_save_path,
     np,
-    os,
     tf,
     time,
+    training_time4_path,
 ):
+    # Vérifie si le modèle a déjà été entraîné (et sauvegardé)
+    # Si c'est le cas, charge le modèle à partir de la sauvegarde
+    # Utilisé principalement pour économiser du temps lors de la réexécution du notebook
     if os.path.exists(model4_save_path):
-        model4_1 = load_model(model4_save_path)
-        history4 = np.load(model4_log_path + ".npy", allow_pickle="True").item()
+        # Charger le modèle existant
+        model4 = load_model(model4_save_path)
+        history4 = np.load(model4_log_path + ".npy", allow_pickle=True).item()
+
+        with open(training_time4_path, "r") as _f:
+            time_training_method_4 = json.load(_f)["training_time_m4"]
+
+        print("Modèle chargé depuis les fichiers.")
+
     else:
-        _beginning_time = time.time()
-        with tf.device("/gpu:0"):
-            history4 = model4_1.fit(
+        with tf.device(device_name):
+            # Définir la pipeline d'augmentation de données
+            data_augmentation = Sequential([
+                RandomFlip("horizontal", input_shape=(224, 224, 3)),
+                RandomRotation(0.1),
+                RandomZoom(0.1),
+            ])
+
+            # Charger VGG16 sans la couche top
+            base_model = VGG16(include_top=False, weights="imagenet", input_shape=(224, 224, 3))
+            for layer in base_model.layers:
+                layer.trainable = False
+
+            # Construire le modèle complet
+            model4 = Sequential([
+                data_augmentation,
+                Rescaling(1.0 / 127.5, offset=-1),
+                base_model,
+                GlobalAveragePooling2D(),
+                Dense(256, activation="relu"),
+                Dropout(0.5),
+                Dense(7, activation="softmax"),
+            ])
+
+            model4.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+            print(model4.summary())
+
+            # Entraînement du modèle
+            _start_time = time.time()
+            _history = model4.fit(
                 dataset_train,
                 epochs=50,
                 batch_size=64,
-                callbacks=callbacks_list_3,
+                callbacks=callbacks_list_m4,
                 validation_data=dataset_validation,
                 verbose=1,
             )
-            np.save(model4_log_path, history4.history)
-        time_training_method_4 = np.round(time.time() - _beginning_time, 0)
-    return history4, model4_1, time_training_method_4
+            time_training_method_4 = round(time.time() - _start_time, 0)
+            history4 = _history.history
+
+            # Sauvegarder le modèle et les données d'entraînement
+            model4.save(model4_save_path)
+            np.save(model4_log_path, history4)
+            with open(training_time4_path, "w") as _f:
+                json.dump({"training_time_m4": time_training_method_4}, _f)
+
+            print(f"Modèle entraîné en {time_training_method_4} secondes.")
+    return history4, model4, time_training_method_4
 
 
 @app.cell(hide_code=True)
@@ -1542,38 +1816,39 @@ def _(mo):
 
 
 @app.cell
-def _(dataset_train, dataset_validation, model4_1):
-    loss_3, accuracy_3 = model4_1.evaluate(dataset_train, verbose=True)
-    print("Training Accuracy: {:.4f}".format(accuracy_3))
+def _(dataset_train, dataset_validation, mo, model4):
+    with mo.persistent_cache("evaluate_last_model4"):
+        train_loss_m4, train_accuracy_m4 = model4.evaluate(dataset_train, verbose=True)
+
+        val_loss_m4, val_accuracy_m4 = model4.evaluate(dataset_validation, verbose=True)
+
+    print(f"Training Accuracy: {train_accuracy_m4:.4f}")
     print()
-    loss_3, accuracy_3 = model4_1.evaluate(dataset_validation, verbose=True)
-    print("Validation Accuracy:  {:.4f}".format(accuracy_3))
-    return accuracy_3, loss_3
+    print(f"Validation Accuracy: {val_accuracy_m4:.4f}")
+    return
 
 
 @app.cell
-def _(
-    X_test_1,
-    X_val_1,
-    accuracy_3,
-    loss_3,
-    model4_1,
-    model4_save_path,
-    y_test,
-    y_val,
-):
-    model4_1.load_weights(model4_save_path)
-    loss_validation_3, accuracy_validation_3 = model4_1.evaluate(X_val_1, y_val, verbose=False)
-    print("Validation Accuracy       :  {:.4f}".format(accuracy_3))
-    print("Validation Loss           :  {:.4f}".format(loss_3))
-    loss_test_3, accuracy_test_3 = model4_1.evaluate(X_test_1, y_test, verbose=False)
-    print("Test Accuracy             :  {:.4f}".format(accuracy_3))
-    print("Test Loss                 :  {:.4f}".format(loss_3))
+def _(dataset_test, dataset_validation, mo, model4, model4_save_path):
+    with mo.persistent_cache("evaluate_best_model4"):
+        # Charger les poids du meilleur modèle
+        model4.load_weights(model4_save_path)
+
+        # Évaluation sur l'ensemble de validation
+        val_loss_final_m4, val_accuracy_final_m4 = model4.evaluate(dataset_validation, verbose=False)
+
+        # Évaluation sur l'ensemble de test
+        test_loss_m4, test_accuracy_m4 = model4.evaluate(dataset_test, verbose=False)
+
+    print(f"Validation Accuracy: {val_accuracy_final_m4:.4f}")
+    print(f"Validation Loss: {val_loss_final_m4:.4f}")
+    print(f"Test Accuracy: {test_accuracy_m4:.4f}")
+    print(f"Test Loss: {test_loss_m4:.4f}")
     return (
-        accuracy_test_3,
-        accuracy_validation_3,
-        loss_test_3,
-        loss_validation_3,
+        test_accuracy_m4,
+        test_loss_m4,
+        val_accuracy_final_m4,
+        val_loss_final_m4,
     )
 
 
@@ -1587,29 +1862,71 @@ def _(mo):
 def _(history4, plot_history, plt, show_history):
     # Plot the history of training
     show_history(history4)
-    plot_history(history4, path="./models/model4_history.png")
+    plot_history(history4, path="models/model4_history.png")
     plt.close()
     return
 
 
 @app.cell
 def _(
-    X_test_1,
-    categories_list_1,
+    classification_report,
     confusion_matrix,
-    model4_1,
+    dataset_test,
+    mo,
+    model4,
     np,
     pd,
     plt,
     sns,
-    y_test,
+    tf,
 ):
-    _y_test_true = np.argmax(y_test, axis=1)
-    _y_test_pred = np.argmax(model4_1.predict(X_test_1), axis=1)
-    _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
-    _df_conf_mat = pd.DataFrame(_conf_mat, index=[label for label in categories_list_1], columns=[_i for _i in "0123456"])
-    plt.figure(figsize=(6, 4))
-    sns.heatmap(_df_conf_mat, annot=True, cmap="Blues")
+    with mo.persistent_cache("report_model4"):
+        # Extraire les images et labels du dataset
+        _X_test, _y_test_true = [], []
+        for _images, _labels in dataset_test:
+            _X_test.append(_images)
+            _y_test_true.append(_labels)
+
+        _X_test = tf.concat(_X_test, axis=0)
+        _y_test_true = tf.argmax(tf.concat(_y_test_true, axis=0), axis=1).numpy()
+
+        # Prédictions
+        _y_test_pred = np.argmax(model4.predict(_X_test), axis=1)
+
+        # Créer une matrice de confusion avec noms explicites
+        _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
+        _df_conf_mat = pd.DataFrame(
+            _conf_mat,
+            index=dataset_test.class_names,
+            columns=[_i for _i in "0123456"],
+        )
+
+        # Heatmap de la matrice de confusion
+        plt.figure(figsize=(6, 4))
+        _ax = sns.heatmap(_df_conf_mat, annot=True, cmap="Blues", fmt="d")
+        plt.xlabel("Prédictions")
+        plt.ylabel("Vérités")
+        plt.title("Matrice de Confusion")
+        plt.tight_layout()
+
+        # Rapport de classification par classe
+        _report_dict = classification_report(
+            _y_test_true,
+            _y_test_pred,
+            target_names=dataset_test.class_names,
+            output_dict=True,
+        )
+        df_report_m4 = pd.DataFrame(_report_dict).transpose()
+
+    # mo.vstack([
+    #     mo.md("**Evaluation model 4: Dataset augmentation**"),
+    #     mo.hstack([_ax]),
+    #     mo.ui.table(df_report_m4),
+    # ])
+    (print("**Evaluation model 4: Dataset augmentation**"),)
+
+    print(df_report_m4)
+    plt.show()
     return
 
 
@@ -1621,23 +1938,27 @@ def _(mo):
 
 @app.cell
 def _(
-    accuracy_test_3,
-    accuracy_tests,
-    accuracy_validation_3,
-    accuracy_validations,
-    loss_test_3,
-    loss_tests,
-    loss_validation_3,
-    loss_validations,
+    scores_df,
+    test_accuracy_m4,
+    test_loss_m4,
     time_prepare_method_3,
     time_training_method_4,
-    training_times,
+    val_accuracy_final_m4,
+    val_loss_final_m4,
 ):
-    training_times.append(time_prepare_method_3 + time_training_method_4)
-    loss_validations.append(loss_validation_3)
-    loss_tests.append(loss_test_3)
-    accuracy_validations.append(accuracy_validation_3)
-    accuracy_tests.append(accuracy_test_3)
+    _duration = time_prepare_method_3 + time_training_method_4
+
+    _new_row = {
+        "methode": "dataset avec augmentation",
+        "training_times": _duration,
+        "loss_validations": val_loss_final_m4,
+        "loss_tests": test_loss_m4,
+        "accuracy_validation": val_accuracy_final_m4,
+        "accuracy_tests": test_accuracy_m4,
+    }
+
+    scores_df.loc[3] = _new_row
+    scores_df
     return
 
 
@@ -1647,61 +1968,43 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""Convertissons tout d'abord nos listes de scores dans un DataFrame pour en faciliter l'affichage""")
-    return
-
-
 @app.cell
-def _(
-    accuracy_tests,
-    accuracy_validations,
-    loss_tests,
-    loss_validations,
-    pd,
-    training_times,
-):
-    scores_modeles = [loss_validations, loss_tests, accuracy_validations, accuracy_tests, training_times]
-
-    scores = pd.DataFrame(
-        scores_modeles,
-        columns=["Méthode 1", "Méthode 2", "Méthode 3", "Méthode 4"],
-        index=["loss_validations", "loss_tests", "accuracy_validations", "accuracy_tests", "training_times"],
-    )
-    scores = scores.T
-    return (scores,)
-
-
-@app.cell
-def _(plt, scores, sns):
+def _(plt, scores_df, sns):
     fig = plt.figure(figsize=(10, 8), constrained_layout=True)
+
+    # Ajouter une grille de sous-graphiques avec 2 lignes et 2 colonnes
     gs = fig.add_gridspec(nrows=2, ncols=2)
 
-    fig_ax1 = fig.add_subplot(gs[0, 0])
-    sns.barplot(data=scores, x=scores.index, y="loss_validations", label="Entropie croisée set validation")
-    sns.barplot(data=scores, x=scores.index, y="loss_tests", label="Entropie croisée set test", alpha=0.5)
-    plt.title("Comparaison entropie croisée validation/test", fontweight="bold")
-    plt.legend(loc="lower left")
-    plt.ylabel("Entropie croisée")
-    plt.xticks(rotation=45, ha="right")
-    plt.xlabel("Méthode")
+    # Sous-graphe 1 : Entropie croisée validation/test
+    fig_ax0 = fig.add_subplot(gs[0, 0])
+    sns.barplot(ax=fig_ax0, data=scores_df, x="methode", y="loss_validations", label="Validation")
+    sns.barplot(ax=fig_ax0, data=scores_df, x="methode", y="loss_tests", label="Test", alpha=0.5)
+    fig_ax0.set_title("Comparaison entropie croisée validation/test", fontweight="bold")
+    fig_ax0.legend(loc="lower left")
+    fig_ax0.set_ylabel("Entropie croisée")
+    fig_ax0.set_xlabel("Méthode")
+    fig_ax0.tick_params(axis="x", rotation=45)
 
+    # Sous-graphe 2 : Exactitude (accuracy) validation/test
     fig_ax1 = fig.add_subplot(gs[0, 1])
-    sns.barplot(data=scores, x=scores.index, y="accuracy_validations", label="Exactitude (accuracy) set validation")
-    sns.barplot(data=scores, x=scores.index, y="accuracy_tests", label="Exactitude (accuracy) set test", alpha=0.5)
-    plt.title("Comparaison exactitude validation/test", fontweight="bold")
-    plt.legend(loc="lower left")
-    plt.ylabel("Exactitude")
-    plt.xticks(rotation=45, ha="right")
-    plt.xlabel("Méthode")
+    sns.barplot(ax=fig_ax1, data=scores_df, x="methode", y="accuracy_validation", label="Validation")
+    sns.barplot(ax=fig_ax1, data=scores_df, x="methode", y="accuracy_tests", label="Test", alpha=0.5)
+    fig_ax1.set_title("Comparaison exactitude validation/test", fontweight="bold")
+    fig_ax1.legend(loc="lower left")
+    fig_ax1.set_ylabel("Exactitude")
+    fig_ax1.set_xlabel("Méthode")
+    fig_ax1.tick_params(axis="x", rotation=45)
 
-    fig_ax1 = fig.add_subplot(gs[1, :])
-    sns.barplot(data=scores, x=scores.index, y="training_times", label="Temps d'entrainement")
-    plt.title("Temps d'entrainement des modèles", fontweight="bold")
-    plt.ylabel("Temps d'entrainement (s)")
-    plt.xticks(rotation=45, ha="right")
-    plt.xlabel("Méthode")
+    # Sous-graphe 3 : Temps d'entraînement
+    fig_ax2 = fig.add_subplot(gs[1, :])
+    sns.barplot(ax=fig_ax2, data=scores_df, x="methode", y="training_times")
+    fig_ax2.set_title("Temps d'entraînement des modèles", fontweight="bold")
+    fig_ax2.set_ylabel("Temps d'entraînement (s)")
+    fig_ax2.set_xlabel("Méthode")
+    fig_ax2.tick_params(axis="x", rotation=45)
+
+    # Afficher la figure complète
+    plt.show()
     return
 
 
@@ -1709,14 +2012,17 @@ def _(plt, scores, sns):
 def _(mo):
     mo.md(
         r"""
-    On constate que les modèles ont une exactitude similaire, cependant certains modèles se démarquent particulièrement avec les scores d'entropie croisée.
+        Les graphiques illustrent les performances et les temps d'entraînement de quatre méthodes d'entraînement de modèles : fonctionnelle, data generator, dataset sans augmentation, et dataset avec augmentation.
 
-    Tout d'abord on remarque une énorme différence entre les scores d'entropie croisée de validation et de test pour les modèles 2 et 3, ce qui dénote de l'overfitting.
+        L'entropie croisée, plus basse pour une meilleure performance, montre des différences entre les phases de validation et de test, avec un risque de surapprentissage pour la méthode "dataset avec augmentation".
 
-    Le modèle numéro 1 n'est pas très bon, avec une entropie croisée de quasiment le double du modèle n°4.
+        L'exactitude, élevée et similaire entre validation et test pour toutes les méthodes, est légèrement inférieure pour le test avec augmentation de données.
 
-    Quand au modèle 4, celui montre un léger overfitting, cependant au vu de ses résultats il semble être le modèle le plus approprié ici, bien qu'il ait un temps d'entrainement près de 50% supérieur au modèle n°1.
-    """
+        Les temps d'entraînement varient, avec la méthode "fonctionnelle" étant la plus rapide et "dataset avec augmentation" la plus longue.
+
+        Les méthodes "fonctionnelle" et "data generator" offrent un bon compromis entre performance et temps d'entraînement.
+
+        L'augmentation des données améliore l'exactitude mais augmente le risque de surapprentissage et le temps d'entraînement.    """
     )
     return
 

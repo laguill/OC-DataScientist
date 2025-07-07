@@ -1,7 +1,7 @@
 import marimo
 
-__generated_with = "0.14.9"
-app = marimo.App()
+__generated_with = "0.14.10"
+app = marimo.App(app_title="P6 Script API python", auto_download=["html"])
 
 
 @app.cell
@@ -63,13 +63,17 @@ def _(mo):
 
 
 @app.cell
-def _(os, requests):
+def _(os):
+    api_key = os.environ["X-RapidAPI-Key"]
+    return (api_key,)
+
+
+@app.cell
+def _(api_key, requests):
     url = "https://edamam-food-and-grocery-database.p.rapidapi.com/api/food-database/v2/parser"
 
     # Paramètre pour rechercher "champagne"
     querystring = {"ingr": "champagne"}
-
-    api_key = os.environ["X-RapidAPI-Key"]
 
     # En-têtes HTTP avec la clé et l'hôte RapidAPI
     headers = {

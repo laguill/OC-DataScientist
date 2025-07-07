@@ -1,0 +1,1 @@
+/home/laguill/.local/bin/python_tools/export_marimo_to_ipynb.py

@@ -1,7 +1,11 @@
 import marimo
 
-__generated_with = "0.14.9"
-app = marimo.App(width="medium")
+__generated_with = "0.14.10"
+app = marimo.App(
+    width="medium",
+    app_title="P6 prétraitement descriptions",
+    auto_download=["html"],
+)
 
 
 @app.cell
@@ -311,6 +315,15 @@ def _(mo):
     return
 
 
+@app.cell
+def _(df, plt, sns):
+    sns.barplot(df[["product_name", "description", "product_category_tree", "image"]].count())
+    plt.tight_layout()
+    plt.title("Nombre de valeurs par caractéristiques")
+    plt.show()
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""## Colonne description""")
@@ -327,7 +340,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-    Je par ajouter le product name à le description produit.
+    Je commence par ajouter le product name à le description produit.
 
     Puis je passe à la partie nettoyage.
 
@@ -645,6 +658,28 @@ def _(df):
 @app.cell
 def _(df):
     df["main_category"].count()
+    return
+
+
+@app.cell
+def _(df, plt, sns):
+    # Compter les valeurs de chaque catégorie
+    counts = df["main_category"].value_counts()
+
+    # Créer un graphique en secteurs avec Seaborn
+    plt.figure(figsize=(6, 6))
+    colors = sns.color_palette("pastel")[0 : len(counts)]
+    plt.pie(
+        counts.values,
+        labels=counts.index,
+        colors=colors,
+        autopct=lambda p: "{:.0f}".format(p * sum(counts) / 100),
+        startangle=140,
+    )
+
+    plt.title("Nombre de produit par catégorie")
+    plt.tight_layout()
+    plt.show()
     return
 
 

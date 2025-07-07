@@ -16,6 +16,8 @@ dependencies = [
   "pip>=25.1.1",
   "plot-keras-history>=1.1.39",
   "plotly>=6.0.1",
+  "python-lsp-ruff>=2.2.2",
+  "python-lsp-server>=1.12.2",
   "requests>=2.32.4",
   "scikit-learn>=1.6.1",
   "seaborn>=0.13.2",
@@ -31,6 +33,7 @@ dependencies = [
   "transformers<5.0", # above 5.0 tensorflow is no more supported by hugging face
   "uv-bump>=0.1.2",
   "watchdog>=6.0.0",
+  "websockets>=15.0.1",
   "wordcloud>=1.9.4",
   "ydata-profiling[notebook]>=4.16.1",
   "yellowbrick>=1.5",
@@ -49,7 +52,6 @@ torchvision = [{ index = "pytorch-cpu" }]
 
 [dependency-groups]
 dev = [
-  "basedpyright>=1.29.1",
   "ipykernel>=6.29.5",
   "mypy>=1.15.0",
   "uv-bump>=0.1.2",

@@ -189,6 +189,8 @@ cython_debug/
 !**data/raw/
 
 **/data/raw/Images/
+**/data/raw/Images_train/
+**/data/raw/Images_test/
 
 **/models/**
 !**/models/
