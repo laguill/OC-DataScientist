@@ -506,7 +506,6 @@ def _(tf):
 
 @app.cell
 def _(
-    Path,
     X_train_preprocessed,
     X_val_preprocessed,
     callbacks_list_m1,
@@ -517,6 +516,7 @@ def _(
     model1_log_path,
     model1_save_path,
     np,
+    os,
     tf,
     time,
     training_time1_path,
@@ -585,7 +585,7 @@ def _(mo):
         r"""
     Training Accuracy: La précision sur l'ensemble des données d'entraînement est de presque 100%, ce qui signifie que le modèle a réussi à classifier correctement toutes les images de l'ensemble d'entraînement.
 
-    Validation Accuracy : La précision sur l'ensemble de validation est de 82.67%, ce qui signifie que le modèle a réussi à classifier correctement environ 82,67% des images de l'ensemble de validation.
+    Validation Accuracy : La précision sur l'ensemble de validation est de 84%, ce qui signifie que le modèle a réussi à classifier correctement environ 82,67% des images de l'ensemble de validation.
 
     Un écart entre la précision sur l'ensemble d'entraînement et sur l'ensemble de validation peut indiquer un overfitting. Cependant, la différence ici n'est pas significative, ce qui suggère que le modèle généralise bien.
     """
@@ -620,7 +620,7 @@ def _(mo):
         r"""
     **Training Accuracy :** La précision sur l'ensemble des données d'entraînement est de presque 100%, ce qui signifie que le modèle a réussi à classifier correctement toutes les images de l'ensemble d'entraînement.
 
-    **Validation Accuracy :** La précision sur l'ensemble de validation est de 81%, ce qui signifie que le modèle a réussi à classifier correctement environ 81% des images de l'ensemble de validation.
+    **Validation Accuracy :** La précision sur l'ensemble de validation est de 84%, ce qui signifie que le modèle a réussi à classifier correctement environ 81% des images de l'ensemble de validation.
 
     Un écart entre la précision sur l'ensemble d'entraînement et sur l'ensemble de validation peut indiquer un overfitting. 
 
@@ -672,22 +672,22 @@ def _(
 def _(mo):
     mo.md(
         r"""
-    **Validation Accuracy (Précision de validation) :** 0,8190
+    **Validation Accuracy (Précision de validation) :** 0,8476
 
-    Cela signifie que votre modèle a correctement prédit environ 81,90 % des échantillons dans l'ensemble de validation.
+    Cela signifie que votre modèle a correctement prédit environ 84 % des échantillons dans l'ensemble de validation.
     C'est une bonne indication de la performance du modèle sur des données qu'il n'a pas vues pendant l'entraînement.
 
-    **Validation Loss (Perte de validation) :** 0,7921
+    **Validation Loss (Perte de validation) :** 0,7433
 
     La perte de validation mesure l'erreur commise par le modèle sur l'ensemble de validation.
     Une perte plus faible indique un meilleur ajustement du modèle aux données. Dans ce cas, la perte de validation est relativement faible, ce qui est un bon signe.
 
-    **Test Accuracy (Précision de test) :** 0,8095
+    **Test Accuracy (Précision de test) :** 0,8190
 
     La précision de test montre comment le modèle se comporte sur un ensemble de données complètement nouveau et non utilisé pendant l'entraînement ou la validation.
-    Ici, le modèle a une précision de 80,95 %, ce qui est légèrement inférieur à la précision de validation. Cela peut indiquer que le modèle généralise bien, mais il peut y avoir une légère variance due à la différence dans les ensembles de données.
+    Ici, le modèle a une précision de 81 %, ce qui est légèrement inférieur à la précision de validation. Cela peut indiquer que le modèle généralise bien, mais il peut y avoir une légère variance due à la différence dans les ensembles de données.
 
-    **Test Loss (Perte de test) :** 0,9067
+    **Test Loss (Perte de test) :** 0,8195
 
     La perte de test est légèrement plus élevée que la perte de validation, ce qui est normal car le modèle n'a jamais vu les données de test.
     Une perte de test plus élevée que la perte de validation peut indiquer un léger sur-ajustement (overfitting), mais la différence ici n'est pas très grande.
@@ -712,59 +712,64 @@ def _(Path, history1, plot_history, plt, show_history):
 
 
 @app.cell
-def _(
-    X_test_preprocessed,
-    classification_report,
-    confusion_matrix,
-    df,
-    mo,
-    model1,
-    np,
-    pd,
-    plt,
-    sns,
-    y_test,
-):
-    with mo.persistent_cache("report_model1"):
-        _categories = df["main_category"].unique().tolist()
+def _(df):
+    CATEGORY_ORDER = sorted(df["main_category"].unique().tolist())
+    return (CATEGORY_ORDER,)
 
-        # Obtenir les vraies et les prédictions du modèle
-        _y_test_true = np.argmax(y_test, axis=1)
-        _y_test_pred = np.argmax(model1.predict(X_test_preprocessed), axis=1)
 
-        # Créer la matrice de confusion
-        _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
-
-        # Affichage sous forme de DataFrame avec labels explicites
-        _df_conf_mat = pd.DataFrame(
-            _conf_mat,
-            index=[label for label in _categories],
+@app.cell
+def _(classification_report, confusion_matrix, pd, plt, sns):
+    def evaluate_model(model_name, y_true, y_pred, category_order):
+        # Matrice de confusion
+        conf_mat = confusion_matrix(y_true, y_pred)
+        df_conf_mat = pd.DataFrame(
+            conf_mat,
+            index=category_order,
             columns=[_i for _i in "0123456"],
         )
 
-        # Affichage de la heatmap
+        # Rapport de classification
+        report = classification_report(
+            y_true,
+            y_pred,
+            target_names=category_order,
+            output_dict=True,
+        )
+        df_report = pd.DataFrame(report).transpose()
+
+        # Affichage
+        print(f"**Évaluation du modèle : {model_name}**")
+        print(df_report[["precision", "recall", "f1-score"]])
+
         plt.figure(figsize=(6, 4))
-        sns.heatmap(_df_conf_mat, annot=True, cmap="Blues")
+        sns.heatmap(df_conf_mat, annot=True, cmap="Blues", fmt="d")
         plt.xlabel("Prédictions")
         plt.ylabel("Vérités")
-        plt.title("Matrice de Confusion")
+        plt.title(f"Matrice de Confusion - {model_name}")
         plt.tight_layout()
-        ax = plt.gca()  # Get the current Axes
+        plt.show()
 
-        _report_dict = classification_report(_y_test_true, _y_test_pred, target_names=_categories, output_dict=True)
-        df_report_m1 = pd.DataFrame(_report_dict).transpose()
+        return df_report
 
-    # Affichage d'un rapport de classification complet
-    # mo.vstack([
-    #     mo.md("**Evaluation model 1: Traitement simple des images**"),
-    #     mo.hstack([ax])
-    #     mo.ui.table(df_report_m1),
-    # ])
-    print("**Evaluation model 1: Traitement simple des images**")
+    return (evaluate_model,)
 
-    print(df_report_m1)
-    plt.show()
-    return
+
+@app.cell
+def _(
+    CATEGORY_ORDER,
+    X_test_preprocessed,
+    evaluate_model,
+    mo,
+    model1,
+    np,
+    y_test,
+):
+    with mo.persistent_cache("report_model1"):
+        _y_true_m1 = np.argmax(y_test, axis=1)
+        _y_pred_m1 = np.argmax(model1.predict(X_test_preprocessed), axis=1)
+        df_report_m1 = evaluate_model("Model 1 - Simple VGG", _y_true_m1, _y_pred_m1, CATEGORY_ORDER)
+
+    return (df_report_m1,)
 
 
 @app.cell(hide_code=True)
@@ -994,7 +999,6 @@ def _(mo):
 
 @app.cell
 def _(
-    Path,
     callbacks_list_m2,
     create_model,
     device_name,
@@ -1003,6 +1007,7 @@ def _(
     model2_log_path,
     model2_save_path,
     np,
+    os,
     test_flow,
     tf,
     time,
@@ -1117,56 +1122,22 @@ def _(history2, plot_history, plt, show_history):
 
 
 @app.cell
-def _(
-    classification_report,
-    confusion_matrix,
-    mo,
-    model2,
-    np,
-    pd,
-    plt,
-    sns,
-    test_flow,
-):
+def _(evaluate_model, mo, model2, np, test_flow):
     with mo.persistent_cache("report_model2"):
-        # Important : shuffle=False dans test_flow lors de sa création sinon erreur lors de la confusion matrix
+        # Prédictions
+        y_pred_proba_m2 = model2.predict(test_flow)
+        y_pred_m2 = np.argmax(y_pred_proba_m2, axis=1)
 
-        # Prédictions du modèle
-        _y_pred_proba = model2.predict(test_flow)
-        _y_pred = np.argmax(_y_pred_proba, axis=1)
+        # Vraies classes
+        y_true_m2 = test_flow.classes
 
-        # Valeurs réelles
-        _y_true = test_flow.classes
+        # Ordre des labels
+        _category_order = list(test_flow.class_indices.keys())
 
-        # Récupérer le mapping index <-> nom de classe
-        _labels_ordered = list(test_flow.class_indices.keys())
+        # Évaluation
+        df_report_m2 = evaluate_model("Model 2 - Data Augmentation", y_true_m2, y_pred_m2, _category_order)
 
-        # Créer une matrice de confusion avec noms explicites
-        _conf_mat = confusion_matrix(_y_true, _y_pred)
-        _df_conf_mat = pd.DataFrame(_conf_mat, index=_labels_ordered, columns=[_i for _i in "0123456"])
-
-        # Heatmap de la matrice de confusion
-        plt.figure(figsize=(6, 4))
-        _ax = sns.heatmap(_df_conf_mat, annot=True, cmap="Blues", fmt="d")
-        plt.xlabel("Prédictions")
-        plt.ylabel("Vérités")
-        plt.title("Matrice de Confusion")
-        plt.tight_layout()
-
-        # Rapport de classification par classe
-        _report_dict = classification_report(_y_true, _y_pred, target_names=_labels_ordered, output_dict=True)
-        df_report_m2 = pd.DataFrame(_report_dict).transpose()
-
-    # mo.vstack([
-    #     mo.md("**Evaluation model 2: Data Augmentation**"),
-    #     mo.hstack([_ax]),
-    #     mo.ui.table(df_report_m2),
-    # ])
-    print("**Evaluation model 2: Data Augmentation**")
-
-    print(df_report_m2)
-    plt.show()
-    return
+    return (df_report_m2,)
 
 
 @app.cell(hide_code=True)
@@ -1203,7 +1174,7 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Troisième approche: Dataset sans dataaugmentation""")
+    mo.md(r"""## Troisième approche: Dataset sans data augmentation""")
     return
 
 
@@ -1222,7 +1193,7 @@ def _(mo):
 
 
 @app.cell
-def _(Path, df, os, shutil, train_test_split):
+def _(df, os, shutil, train_test_split):
     # Sépare le DataFrame 'df' en deux ensembles : 85% pour l'entraînement, 15% pour le test
     _data, _data_test = train_test_split(df, test_size=0.15, random_state=42)
 
@@ -1384,7 +1355,6 @@ def _(mo):
 
 @app.cell
 def _(
-    Path,
     callbacks_list_m3,
     create_model,
     dataset_train,
@@ -1395,6 +1365,7 @@ def _(
     model3_log_path,
     model3_save_path,
     np,
+    os,
     tf,
     time,
     training_time3_path,
@@ -1507,66 +1478,28 @@ def _(history3, plot_history, plt, show_history):
 
 
 @app.cell
-def _(
-    classification_report,
-    confusion_matrix,
-    dataset_test,
-    mo,
-    model3,
-    np,
-    pd,
-    plt,
-    sns,
-    tf,
-):
+def _(dataset_test, evaluate_model, mo, model3, np):
     with mo.persistent_cache("report_model3"):
-        # Extraire les images et labels du dataset
-        _X_test, _y_test_true = [], []
-        for images, labels in dataset_test:
-            _X_test.append(images)
-            _y_test_true.append(labels)
+        # Étape 1 : Convertir test dataset
+        _X_test, _y_true = [], []
+        for batch_x, batch_y in dataset_test:
+            _X_test.append(batch_x.numpy())
+            _y_true.append(batch_y.numpy())
 
-        _X_test = tf.concat(_X_test, axis=0)
-        _y_test_true = tf.argmax(tf.concat(_y_test_true, axis=0), axis=1).numpy()
+        _X_test = np.concatenate(_X_test)
+        _y_true = np.argmax(np.concatenate(_y_true), axis=1)
 
-        # Prédictions
-        _y_test_pred = np.argmax(model3.predict(_X_test), axis=1)
+        # Étape 2 : Prédictions
+        _y_pred_proba = model3.predict(_X_test)
+        _y_pred = np.argmax(_y_pred_proba, axis=1)
 
-        # Créer une matrice de confusion avec noms explicites
-        _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
-        _df_conf_mat = pd.DataFrame(
-            _conf_mat,
-            index=dataset_test.class_names,
-            columns=[_i for _i in "0123456"],
-        )
+        # Étape 3 : Labels
+        class_names = dataset_test.class_names
 
-        # Heatmap de la matrice de confusion
-        plt.figure(figsize=(6, 4))
-        _ax = sns.heatmap(_df_conf_mat, annot=True, cmap="Blues", fmt="d")
-        plt.xlabel("Prédictions")
-        plt.ylabel("Vérités")
-        plt.title("Matrice de Confusion")
-        plt.tight_layout()
+        # Étape 4 : Évaluation
+        df_report_m3 = evaluate_model("Model 3 - Fine-tuned VGG", _y_true, _y_pred, class_names)
 
-        # Rapport de classification par classe
-        _report_dict = classification_report(
-            _y_test_true,
-            _y_test_pred,
-            target_names=dataset_test.class_names,
-            output_dict=True,
-        )
-        df_report_m3 = pd.DataFrame(_report_dict).transpose()
-
-    # mo.vstack([
-    #     mo.md("**Evaluation model 3: Dataset**"),
-    #     mo.hstack([_ax]),
-    #     mo.ui.table(df_report_m3),
-    # ])
-    print("**Evaluation model 3: Dataset**")
-
-    print(df_report_m3)
-    plt.show()
-    return
+    return (df_report_m3,)
 
 
 @app.cell(hide_code=True)
@@ -1719,7 +1652,6 @@ def _(
     Dense,
     Dropout,
     GlobalAveragePooling2D,
-    Path,
     RandomFlip,
     RandomRotation,
     RandomZoom,
@@ -1735,6 +1667,7 @@ def _(
     model4_log_path,
     model4_save_path,
     np,
+    os,
     tf,
     time,
     training_time4_path,
@@ -1868,66 +1801,28 @@ def _(history4, plot_history, plt, show_history):
 
 
 @app.cell
-def _(
-    classification_report,
-    confusion_matrix,
-    dataset_test,
-    mo,
-    model4,
-    np,
-    pd,
-    plt,
-    sns,
-    tf,
-):
+def _(dataset_test, evaluate_model, mo, model4, np):
     with mo.persistent_cache("report_model4"):
-        # Extraire les images et labels du dataset
-        _X_test, _y_test_true = [], []
-        for _images, _labels in dataset_test:
-            _X_test.append(_images)
-            _y_test_true.append(_labels)
+        # Étape 1 : Convertir test dataset
+        _X_test, _y_true = [], []
+        for _batch_x, _batch_y in dataset_test:
+            _X_test.append(_batch_x.numpy())
+            _y_true.append(_batch_y.numpy())
 
-        _X_test = tf.concat(_X_test, axis=0)
-        _y_test_true = tf.argmax(tf.concat(_y_test_true, axis=0), axis=1).numpy()
+        _X_test = np.concatenate(_X_test)
+        _y_true = np.argmax(np.concatenate(_y_true), axis=1)
 
-        # Prédictions
-        _y_test_pred = np.argmax(model4.predict(_X_test), axis=1)
+        # Étape 2 : Prédictions
+        _y_pred_proba = model4.predict(_X_test)
+        _y_pred = np.argmax(_y_pred_proba, axis=1)
 
-        # Créer une matrice de confusion avec noms explicites
-        _conf_mat = confusion_matrix(_y_test_true, _y_test_pred)
-        _df_conf_mat = pd.DataFrame(
-            _conf_mat,
-            index=dataset_test.class_names,
-            columns=[_i for _i in "0123456"],
-        )
+        # Étape 3 : Labels
+        _class_names = dataset_test.class_names
 
-        # Heatmap de la matrice de confusion
-        plt.figure(figsize=(6, 4))
-        _ax = sns.heatmap(_df_conf_mat, annot=True, cmap="Blues", fmt="d")
-        plt.xlabel("Prédictions")
-        plt.ylabel("Vérités")
-        plt.title("Matrice de Confusion")
-        plt.tight_layout()
+        # Étape 4 : Évaluation
+        df_report_m4 = evaluate_model("Fine-tuning VGG + Data Augmentation", _y_true, _y_pred, _class_names)
 
-        # Rapport de classification par classe
-        _report_dict = classification_report(
-            _y_test_true,
-            _y_test_pred,
-            target_names=dataset_test.class_names,
-            output_dict=True,
-        )
-        df_report_m4 = pd.DataFrame(_report_dict).transpose()
-
-    # mo.vstack([
-    #     mo.md("**Evaluation model 4: Dataset augmentation**"),
-    #     mo.hstack([_ax]),
-    #     mo.ui.table(df_report_m4),
-    # ])
-    (print("**Evaluation model 4: Dataset augmentation**"),)
-
-    print(df_report_m4)
-    plt.show()
-    return
+    return (df_report_m4,)
 
 
 @app.cell(hide_code=True)
@@ -1969,8 +1864,57 @@ def _(mo):
 
 
 @app.cell
+def _(pd):
+    def compare_models(*reports, metric="f1-score", labels=None):
+        comparison = pd.DataFrame()
+
+        for i, (name, df_report) in enumerate(reports):
+            scores = df_report.loc[labels or df_report.index, metric]
+            comparison[name] = scores
+
+        return comparison
+
+    return (compare_models,)
+
+
+@app.cell
+def _(
+    compare_models,
+    df_report_m1,
+    df_report_m2,
+    df_report_m3,
+    df_report_m4,
+    test_flow,
+):
+    category_order = list(test_flow.class_indices.keys())
+    compare_df = compare_models(
+        ("Modèle 1", df_report_m1),
+        ("Modèle 2", df_report_m2),
+        ("Modèle 3", df_report_m3),
+        ("Modèle 4", df_report_m4),
+        labels=category_order,
+    )
+
+    compare_df
+
+    return (compare_df,)
+
+
+@app.cell
+def _(compare_df, plt):
+    compare_df.T.plot(kind="bar", figsize=(12, 6))
+    plt.ylabel("F1-score")
+    plt.title("Comparaison des modèles par classe (F1-score)")
+    plt.xticks(rotation=45)
+    plt.legend(title="Catégories", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.show()
+    return
+
+
+@app.cell
 def _(plt, scores_df, sns):
-    fig = plt.figure(figsize=(10, 8), constrained_layout=True)
+    fig = plt.figure(figsize=(10, 12), constrained_layout=True)
 
     # Ajouter une grille de sous-graphiques avec 2 lignes et 2 colonnes
     gs = fig.add_gridspec(nrows=2, ncols=2)
@@ -2012,17 +1956,18 @@ def _(plt, scores_df, sns):
 def _(mo):
     mo.md(
         r"""
-        Les graphiques illustrent les performances et les temps d'entraînement de quatre méthodes d'entraînement de modèles : fonctionnelle, data generator, dataset sans augmentation, et dataset avec augmentation.
+    Les graphiques illustrent les performances et les temps d'entraînement de quatre méthodes d'entraînement de modèles : fonctionnelle, data generator, dataset sans augmentation, et dataset avec augmentation.
 
-        L'entropie croisée, plus basse pour une meilleure performance, montre des différences entre les phases de validation et de test, avec un risque de surapprentissage pour la méthode "dataset avec augmentation".
+    L'entropie croisée, plus basse pour une meilleure performance, montre des différences entre les phases de validation et de test, avec un risque de surapprentissage pour la méthode "dataset avec augmentation".
 
-        L'exactitude, élevée et similaire entre validation et test pour toutes les méthodes, est légèrement inférieure pour le test avec augmentation de données.
+    L'exactitude, élevée et similaire entre validation et test pour toutes les méthodes, est légèrement inférieure pour le test avec augmentation de données.
 
-        Les temps d'entraînement varient, avec la méthode "fonctionnelle" étant la plus rapide et "dataset avec augmentation" la plus longue.
+    Les temps d'entraînement varient, avec la méthode "fonctionnelle" étant la plus rapide et "dataset avec augmentation" la plus longue.
 
-        Les méthodes "fonctionnelle" et "data generator" offrent un bon compromis entre performance et temps d'entraînement.
+    Les méthodes "fonctionnelle" et "data generator" offrent un bon compromis entre performance et temps d'entraînement.
 
-        L'augmentation des données améliore l'exactitude mais augmente le risque de surapprentissage et le temps d'entraînement.    """
+    L'augmentation des données améliore l'exactitude mais augmente le risque de surapprentissage et le temps d'entraînement.
+    """
     )
     return
 
