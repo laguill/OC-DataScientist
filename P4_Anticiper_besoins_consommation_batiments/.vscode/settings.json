@@ -1,0 +1,10 @@
+{
+    "files.autoSave": "onFocusChange",
+    "terminal.integrated.fontLigatures.enabled": true,
+    "editor.fontLigatures": true,
+    "basedpyright.disableLanguageServices": true,
+    "marimo.marimoPath": "uv run marimo",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "jupyter.notebookFileRoot": "${workspaceDir}"
+
+}

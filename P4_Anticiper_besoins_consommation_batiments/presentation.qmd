@@ -1,0 +1,107 @@
+---
+title: "Projet 4"
+subtitle: "Préparer les données pour un organisme de santé publique"
+author: "Guillaume LAFON"
+
+format:
+  pptx:
+    incremental: true 
+    toc: true
+    top-depth: 1
+    toc-title: "Sommaire"
+    reference-doc: template.pptx
+lang: fr
+output: false
+---
+
+---
+
+# Introduction au Projet
+- Présentation générale du projet
+- Objectifs de l'exploration des données
+- Importance de l'analyse des données pour la modélisation
+
+---
+
+# Aperçu du Jeu de Données
+- Description des données
+- Nombre de lignes et de colonnes
+- Types de variables (numériques, catégorielles, etc.)
+
+---
+
+# Statistiques Descriptives
+- Moyennes, médianes, écarts-types des variables clés
+- Visualisations (histogrammes, boîtes à moustaches)
+
+---
+
+# Analyse des Corrélations
+- Matrice de corrélation
+- Identification des variables fortement corrélées
+
+---
+
+# Visualisation des Données
+- Graphiques clés (scatter plots, heatmaps, etc.)
+- Insights visuels importants
+
+---
+
+# Traitement des Données Manquantes
+- Méthodes utilisées pour traiter les valeurs manquantes
+- Impact sur le jeu de données
+
+---
+
+# Conclusion de l'Exploration
+- Résumé des insights clés
+- Préparation pour la modélisation
+
+---
+
+# Introduction à la Modélisation
+- Objectifs de la modélisation
+- Cibles : EmissionsCO2 et SiteEnergyUse
+
+---
+
+# Préparation des Données
+- Sélection des variables
+- Transformation des variables (encodage, normalisation, etc.)
+
+---
+
+# Méthodes de Modélisation
+- Algorithmes utilisés (régression linéaire, arbres de décision, etc.)
+- Justification du choix des algorithmes
+
+---
+
+# Évaluation des Modèles
+- Métriques d'évaluation (R², MAE, RMSE, etc.)
+- Comparaison des performances des modèles
+
+---
+
+# Résultats et Interprétation
+- Présentation des résultats
+- Interprétation des coefficients/importance des variables
+
+---
+
+# Validation et Test
+- Méthodes de validation (cross-validation, split train/test)
+- Résultats sur le jeu de test
+
+---
+
+# Conclusion et Perspectives
+- Résumé des résultats
+- Limites du modèle
+- Perspectives d'amélioration
+
+---
+
+# Questions et Réponses
+- Ouverture à des questions du public
