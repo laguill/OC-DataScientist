@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.14.12"
+__generated_with = "0.14.13"
 app = marimo.App(width="medium", app_title="P7 Modelisation")
 
 
@@ -24,7 +24,7 @@ def _(mo):
 
     Mettre en place un outil de "scoring crédit"
 
-    -Objectif :
+    - Objectif :
 
     - Calculer la probabilité qu’un client rembourse.
     - Classifier la demande en crédit accordé ou refusé.
@@ -57,16 +57,18 @@ def _():
     import shutil
     import time
     import warnings
+
     from datetime import datetime
     from pathlib import Path
+
     import marimo as mo
 
     # === Suppression des warnings ===
     warnings.filterwarnings("ignore")
 
     # === Data manipulation ===
-    import numpy as np
     import pandas as pd
+    import numpy as np
 
     # === Visualization ===
     import matplotlib.pyplot as plt
@@ -115,7 +117,7 @@ def _():
     # from evidently.future.datasets import Dataset
     # from evidently.future.datasets import DataDefinition
     # from evidently.future.report import Report
-    return Path, mlflow, mo, pal, pd, plt, sns
+    return LabelEncoder, OneHotEncoder, Path, mlflow, mo, np, pd, plt, sns
 
 
 @app.cell(hide_code=True)
@@ -397,7 +399,9 @@ def _(data_path, pd):
     return (
         bureau_balance_df,
         bureau_df,
+        credit_card_balance_df,
         installments_payments_df,
+        pos_cash_balance_df,
         previous_application_df,
     )
 
@@ -433,7 +437,7 @@ def _(bureau_balance_df, bureau_df):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""➡️ chaque prêt a maintenant des infos sur sa durée et son dernier statut mensuel.""")
+    mo.md(r"""➡️ chaque prêt à maintenant des infos sur sa durée et son dernier statut mensuel.""")
     return
 
 
@@ -462,14 +466,14 @@ def _(app_test_df, app_train_df, bureau_df):
 
     # Nettoyage des noms de colonnes
     # e.g. ('AMT_CREDIT_SUM', 'mean') → 'AMT_CREDIT_SUM_mean'
-    _bureau_agg.columns = ["_".join(col).strip() for col in _bureau_agg.columns.ton_numpy()]
+    _bureau_agg.columns = ["_".join(col).strip() for col in _bureau_agg.columns.to_numpy()]
 
     # Correction du nom de colonne SK_ID_CURR apres le join
     _bureau_agg = _bureau_agg.rename(columns={"SK_ID_CURR_": "SK_ID_CURR"})
 
     # fusion
     app_train_merged = app_train_df.merge(_bureau_agg, on="SK_ID_CURR", how="left")
-    app_test_merged = app_test_df.mege(_bureau_agg, on="SK_ID_CURR", how="left")
+    app_test_merged = app_test_df.merge(_bureau_agg, on="SK_ID_CURR", how="left")
     return app_test_merged, app_train_merged
 
 
@@ -553,7 +557,112 @@ def _(app_test_merged2, app_train_merged2, installments_payments_df):
     # fusion
     app_train_merged3 = app_train_merged2.merge(_IP_agg, on="SK_ID_CURR", how="left")
     app_test_merged3 = app_test_merged2.merge(_IP_agg, on="SK_ID_CURR", how="left")
+    return app_test_merged3, app_train_merged3
 
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ➡️ Ajout de features basées sur la ponctualité des paiement pour mieux évaluer les risques:
+
+    - Détecter les bons payeurs (ponctualité, paiement complet)
+
+    - Repérer les risques (retards chroniques, paiements partiels)
+
+    - Estimer la capacité de remboursement
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""Nombre de prêts et retard par client""")
+    return
+
+
+@app.cell
+def _(app_test_merged3, app_train_merged3, pos_cash_balance_df):
+    _pos_agg = (
+        pos_cash_balance_df.groupby("SK_ID_CURR")
+        .agg({
+            "SK_ID_PREV": "nunique",  # Nombre de prêts POS différents par client
+            "SK_DPD": "max",  # Maximum de jours de retard sur les prêts POS
+        })
+        .reset_index()
+    )
+
+    # fusion
+    app_train_merged4 = app_train_merged3.merge(_pos_agg, on="SK_ID_CURR", how="left")
+    app_test_merged4 = app_test_merged3.merge(_pos_agg, on="SK_ID_CURR", how="left")
+    return app_test_merged4, app_train_merged4
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ➡️ Ajout de features basées sur le nombre de prêts pour mieux évaluer les risques:
+
+    - Identifier les clients sur-enndettées
+    - Repérer les risques d'insolvabilité
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""Solde des cartes de crédit""")
+    return
+
+
+@app.cell
+def _(app_test_merged4, app_train_merged4, credit_card_balance_df):
+    _cc_agg = (
+        credit_card_balance_df.groupby("SK_ID_CURR")
+        .agg({
+            "AMT_BALANCE": "mean",  # Solde moyen sur carte de crédit
+            "SK_DPD": "mean",  # Délai moyen de retard de paiement
+        })
+        .reset_index()
+    )
+
+    # fusion
+    app_train_merged5 = app_train_merged4.merge(_cc_agg, on="SK_ID_CURR", how="left")
+    app_test_merged5 = app_test_merged4.merge(_cc_agg, on="SK_ID_CURR", how="left")
+    return app_test_merged5, app_train_merged5
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ➡️ Ajout de features basées sur les soldes de carte  pour mieux évaluer les risques:
+
+    - Identifier les clients qui ont des difficultés dans les dépenses du quotidient
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ➡️ En résumé
+
+    | Source                 | Feature Engineering                      |
+    | ---------------------- | ---------------------------------------- |
+    | `bureau`               | Dettes, montants, type crédits, statut   |
+    | `bureau_balance`       | Historique des statuts de paiements      |
+    | `previous_application` | Comptage demandes, taux d’approbation    |
+    | `installments`         | Retard/avance de paiements, montants dus |
+    | `pos_cash_balance`     | Retard max sur prêts à la consommation   |
+    | `credit_card_balance`  | Moyenne des soldes & retards carte       |
+    """
+    )
     return
 
 
@@ -570,9 +679,15 @@ def _(mo):
 
 
 @app.cell
-def _(app_train_df):
+def _(app_train_merged5):
     # Nombre de chaque type de colonne
-    app_train_df.dtypes.value_counts()
+    app_train_merged5.dtypes.value_counts()
+    return
+
+
+@app.cell
+def _(app_test_merged5):
+    app_test_merged5.dtypes.value_counts()
     return
 
 
@@ -592,7 +707,7 @@ def _(mo):
 def _(pd):
     def show_missings(df, threshold=0):
         # Calculer le pourcentage de valeurs manquantes par colonne
-        pourcentage_manquant = round(df.isnull().mean() * 100)
+        pourcentage_manquant = round(df.isna().mean() * 100)
 
         # Créer un DataFrame pour les statistiques
         stats = pd.DataFrame({
@@ -606,62 +721,41 @@ def _(pd):
         stats_sorted = stats.sort_values(by="Pourcentage de valeurs manquantes", ascending=False)
 
         # Affichage de quelques informations récapitulatives
-        print(f"""Votre DataFrame sélectionné contient {str(stats.shape[0])} colonnes.
-    Il y a {str(mis_val_table_ren_columns.shape[0])} colonnes qui contiennent plus de {threshold}% de valeurs manquantes.""")
+        print(f"""Votre DataFrame sélectionné contient {stats.shape[0]} colonnes.
+    Il y a {mis_val_table_ren_columns.shape[0]} colonnes qui contiennent plus de {threshold}% de valeurs manquantes.""")
 
         return stats_sorted
-
     return (show_missings,)
 
 
 @app.cell
 def _(plt, sns):
     def plot_missing_data_distribution(
-        df,
+        stats_sorted,
         figsize=(20, 12),
-        title="Distribution des valeurs manquantes par variable",
-        xlabel="Variables",
-        ylabel="Proportion",
-        colors=["#f9f8db", "#c51f05"],
     ):
-        """
-        Affiche la distribution des valeurs manquantes par variable dans un DataFrame.
-
-        Paramètres:
-        - df: DataFrame pandas.
-        - figsize: tuple, taille de la figure.
-        - title: str, titre du graphique.
-        - xlabel: str, étiquette de l'axe des x.
-        - ylabel: str, étiquette de l'axe des y.
-        - colors: list, palette de couleurs pour le graphique.
-        """
-        # Préparation des données
-        missing_data = df.isna().melt(value_name="missing")
-
+        """Affiche la distribution des valeurs manquantes par variable dans un DataFrame."""
         plt.figure(figsize=figsize)
-        sns.histplot(data=missing_data, x="variable", hue="missing", multiple="fill", shrink=0.8, palette=colors)
-
-        # Personnalisation
-        plt.title(title, fontsize=16, fontweight="bold")
-        plt.ylabel(ylabel, fontsize=14)
-        plt.xlabel(xlabel, fontsize=14)
+        sns.barplot(
+            x=stats_sorted.index,
+            y=stats_sorted["Pourcentage de valeurs manquantes"],
+            label="Pourcentage de valeurs manquantes",
+        )
+        plt.title("Distribution des valeurs manquantes par variable", fontsize=16, fontweight="bold")
+        plt.ylabel("Pourcentage de valeurs manquantes", fontsize=14)
+        plt.xlabel("Variables", fontsize=14)
         plt.xticks(rotation=90, fontsize=10)
         plt.yticks(fontsize=10)
+        plt.legend(title="Légende", loc="upper right", fontsize=14)
         plt.tight_layout()
         plt.show()
-
     return (plot_missing_data_distribution,)
 
 
 @app.cell
-def _(app_train_df, show_missings):
-    show_missings(app_train_df, 30)
-    return
-
-
-@app.cell
-def _(app_train_df, plot_missing_data_distribution):
-    plot_missing_data_distribution(app_train_df)
+def _(app_train_merged5, plot_missing_data_distribution, show_missings):
+    _missings_df = show_missings(app_train_merged5, 30)
+    plot_missing_data_distribution(_missings_df)
     return
 
 
@@ -685,21 +779,33 @@ def _(mo):
 
 
 @app.cell
-def _(app_train_df):
+def _(app_test_merged5, app_train_merged5):
     # Calculer le seuil de 30% du nombre total de lignes
-    threshold = len(app_train_df) * 0.7
+    threshold = len(app_train_merged5) * 0.7
 
     # Conserver uniquement les colonnes qui ont moins de 30% de valeurs manquantes
-    app_train_df_filtered = app_train_df.dropna(axis="columns", thresh=threshold)
+    app_train_df_filtered = app_train_merged5.dropna(axis="columns", thresh=threshold)
 
-    print(app_train_df.shape)
+    print("Train shape")
+    print(app_train_merged5.shape)
     print(app_train_df_filtered.shape)
-    return (app_train_df_filtered,)
+
+    # Supprime les meme colonnes dans le test
+    columns_to_keep = app_train_df_filtered.columns
+    columns_to_keep = columns_to_keep.drop("TARGET")
+
+    # Appliquer les mêmes colonnes au test set
+    app_test_df_filtered = app_test_merged5[columns_to_keep]
+
+    print("Test shape")
+    print(app_test_merged5.shape)
+    print(app_test_df_filtered.shape)
+    return app_test_df_filtered, app_train_df_filtered
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Ainsi, j'ai diminué le nombre de colonne de mon dataset et il reste 72 colonnes.""")
+    mo.md(r"""Ainsi, j'ai diminué le nombre de colonne de mon dataset et il reste 97 colonnes.""")
     return
 
 
@@ -711,8 +817,31 @@ def _(app_train_df_filtered):
 
 
 @app.cell
-def _(app_train_df_filtered, plot_missing_data_distribution):
-    plot_missing_data_distribution(app_train_df_filtered)
+def _(app_train_df_filtered, plot_missing_data_distribution, show_missings):
+    _missings_df = show_missings(app_train_df_filtered)
+    plot_missing_data_distribution(_missings_df)
+    return
+
+
+@app.cell
+def _(app_test_df_filtered, app_train_df_filtered):
+    print(f"Doublons Trainset: {app_train_df_filtered.duplicated().sum()}")
+    print(f"Doublons Testset: {app_test_df_filtered.duplicated().sum()}")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    /// admonition | Info
+        type: warning
+
+        Les jeu de données ne contiennent pas doublons.
+
+    ///
+    """
+    )
     return
 
 
@@ -735,7 +864,7 @@ def _(mo):
     /// admonition | Info
         type: warning
 
-        Pour les colonnes catgéorielles, j'utiliserai un Label Encoder si le nombre de catgérie est inférieur à 2 sinon j'utiliserai un One-Hot Encoder pour éviter les biais arbitraire.
+        Pour les colonnes catgéorielles, j'utiliserai un Label Encoder si le nombre de catégorie est inférieur à 2 sinon j'utiliserai un One-Hot Encoder pour éviter les biais arbitraire.
 
     ///
     """
@@ -745,40 +874,39 @@ def _(mo):
 
 @app.cell
 def _(plt, sns):
-    def plot_categorical_distributions(df):
-        """
-        Cette fonction génère un graphique de distribution pour chaque colonne de type 'object' dans un DataFrame.
+    def plot_categorical_distributions(df, feature, label=False):
+        """Cette fonction génère un graphique de distribution pour chaque colonne de type 'object' dans un DataFrame.
 
         Paramètres:
         df (DataFrame): Le DataFrame contenant les données à visualiser.
         """
-        for _col in df.select_dtypes("object").columns:
-            # Calculer l'ordre des catégories basé sur la fréquence
-            order = df[_col].value_counts().index
+        # Calculer l'ordre des catégories basé sur la fréquence
+        order = df[feature].value_counts().index
 
-            # Créer une nouvelle figure pour chaque variable
-            plt.figure(figsize=(12, 5))
-            _ax = sns.countplot(x=_col, hue=_col, data=df, stat="percent", order=order, palette="Set2")
+        # Créer une nouvelle figure pour chaque variable
+        plt.figure(figsize=(20, 10))
+        _ax = sns.countplot(x=feature, data=df, stat="percent", order=order)
 
-            # Arrondir les valeurs et les afficher sur les barres
+        # Arrondir les valeurs et les afficher sur les barres
+        if label:
             for _label in _ax.containers:
                 _ax.bar_label(_label, fmt="%.1f%%", label_type="edge")
 
-            # Incliner les étiquettes de l'axe des x de 45 degrés
-            plt.xticks(rotation=45)
-            _ax.set_ylabel("Count")
-            _ax.set_title(f"Distribution de {_col}", fontsize=16)
+        # Incliner les étiquettes de l'axe des x de 45 degrés
+        plt.xticks(rotation=90)
+        _ax.set_ylabel("Count")
+        _ax.set_title(f"Distribution de {feature}", fontsize=16)
 
-            # Ajuster la mise en page et afficher
-            plt.tight_layout()
-            plt.show()
-
-    return
+        # Ajuster la mise en page et afficher
+        plt.grid(True, axis="y", linestyle="--", alpha=0.7)
+        plt.tight_layout()
+        plt.show()
+    return (plot_categorical_distributions,)
 
 
 @app.cell
-def _():
-    #plot_categorical_distributions(app_train_df_filtered)
+def _(app_train_df_filtered, plot_categorical_distributions):
+    plot_categorical_distributions(app_train_df_filtered, "ORGANIZATION_TYPE")
     return
 
 
@@ -794,40 +922,410 @@ def _(mo):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""#### Suppression de valeurs aberrantes documentées""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Les notebooks de la compétition Kaggle indique la présence de valeurs aberrantes.
+
+    Dans la colonne comptabilisant des jours en activité, il ya la présence de 365243. Cela équivaudrait à **1000 ans**...
+
+    Je vais les remplacer par des valeurs manquantes (NAN).
+    """
+    )
+    return
+
+
 @app.cell
-def _(Path, app_test_df, app_train_df, pal, plt, sns):
-    # Créer le dossier de destination s'il n'existe pas
-    plots_dir = Path("data/plots")
-    plots_dir.mkdir(parents=True, exist_ok=True)
+def _(plt, sns):
+    def plot_distribution(df, feature):
+        plt.figure(figsize=(10, 6))
+        plt.title(f"Distribution de {feature}", fontsize=16, fontweight="bold")
+        sns.histplot(df[feature], kde=True, bins=100, edgecolor="black")
+        plt.xlabel(feature, fontsize=14)
+        plt.ylabel("Density", fontsize=14)
+        plt.tick_params(axis="both", which="major", labelsize=12)
+        plt.grid(True, axis="y", linestyle="--", alpha=0.7)
+        plt.tight_layout()
+        plt.show()
+    return (plot_distribution,)
 
-    # Sélectionner les caractéristiques numériques, en excluant "TARGET"
-    _features = app_train_df.select_dtypes("number").columns.drop("TARGET")
 
-    # Parcourir chaque caractéristique et créer un graphique individuel
-    for _column in _features:
-        _plot_path = plots_dir / f"{_column}.png"
+@app.cell
+def _(app_train_df_filtered, plot_distribution):
+    plot_distribution(app_train_df_filtered, "DAYS_EMPLOYED")
+    return
 
-        # Vérifier si le fichier existe déjà
-        if not _plot_path.exists():
-            plt.figure(figsize=(15, 5), dpi=100)
-            sns.histplot(app_train_df[_column], color=pal[0], fill=True, kde=True, bins=20, label="Train")
-            sns.histplot(app_test_df[_column], color=pal[2], fill=True, kde=True, bins=20, label="Test")
-            plt.title(f"{_column}", size=14)
-            plt.xlabel(None)
-            plt.legend()
 
-            # Enregistrer la figure
-            plt.tight_layout()
-            plt.savefig(_plot_path)
-            plt.close()  # Fermer la figure pour libérer de la mémoire
+@app.cell
+def _(app_test_df_filtered, app_train_df_filtered, np):
+    app_train_df_filtered["DAYS_EMPLOYED"] = app_train_df_filtered["DAYS_EMPLOYED"].replace(365243, np.nan)
+    app_test_df_filtered["DAYS_EMPLOYED"] = app_test_df_filtered["DAYS_EMPLOYED"].replace(365243, np.nan)
+
+    print("Remplacé 365243 par NaN dans les colonnes : DAYS_EMPLOYED")
+    return
+
+
+@app.cell
+def _(app_train_df_filtered, plot_distribution):
+    plot_distribution(app_train_df_filtered, "DAYS_EMPLOYED")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""Il y a peu de client qui ont un emploi stable depuis plusieurs années et qui font des demandes de crédit à la consommation.""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""### Encodage des variables catégorielles""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Problème : Les modèles de machine learning ne peuvent pas traiter directement les variables catégorielles.
+
+    Solutions :
+
+    - Encodage par étiquette (Label Encoding) : Assignation d'un entier à chaque catégorie unique. Utile pour les variables avec 2 catégories.
+
+    - Encodage à chaud (One-Hot Encoding) : Création d'une colonne pour chaque catégorie unique. Préconisé pour plus de 2 catégories pour éviter les biais d'ordre arbitraire.
+
+    1. Utilisation de l'encodage par étiquette pour les variables avec 2 catégories et de l'encodage à chaud pour celles avec plus de 2 catégories.
+
+    2. Outils : LabelEncoder de Scikit-Learn pour l'encodage par étiquette et OneHotEncoder de Scikit-Learn pour l'encodage à chaud.
+    """
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Une fois les variables catégorielles encodés, il faut s'assurer que le données d'entrainement et de test correspondent:
+
+    - Objectif : S'assurer que les caractéristiques (colonnes) sont identiques dans les données d'entraînement et de test.
+
+    - Problème : L'encodage à chaud a créé plus de colonnes dans les données d'entraînement car certaines variables catégorielles ont des catégories non représentées dans les données de test.
+
+    - Solution : Aligner les dataframes pour supprimer les colonnes présentes dans les données d'entraînement mais absentes dans les données de test.
+
+    1. Extraction de la cible : Extraire la colonne cible (TARGET) des données d'entraînement avant l'alignement.
+
+    2. Alignement : Utiliser align avec axis=1 pour aligner les dataframes basés sur les colonnes, et non sur les lignes.
+    """
+    )
+    return
+
+
+@app.cell
+def _(
+    LabelEncoder,
+    OneHotEncoder,
+    app_test_df_filtered,
+    app_train_df_filtered,
+    pd,
+):
+    # Encoder les variables binaires avec LabelEncoder, sinon utiliser OneHotEncoder (scikit-learn)
+    categorical_cols = app_train_df_filtered.select_dtypes(include="object").columns
+
+    app_train_encoded = app_train_df_filtered.copy()
+    app_test_encoded = app_test_df_filtered.copy()
+
+    for col in categorical_cols:
+        if app_train_encoded[col].nunique() == 2:
+            # Label Encoding pour les colonnes binaires
+            le = LabelEncoder()
+            le.fit(app_train_encoded[col].astype(str))
+            app_train_encoded[col] = le.transform(app_train_encoded[col].astype(str))
+            app_test_encoded[col] = le.transform(app_test_encoded[col].astype(str))
         else:
-            continue
+            # One-hot encoding avec OneHotEncoder de scikit-learn
+            ohe = OneHotEncoder(sparse_output=False)
+            ohe.fit(app_train_encoded[[col]])
+
+            train_ohe = pd.DataFrame(
+                ohe.transform(app_train_encoded[[col]]),
+                columns=[f"{col}_{cat}" for cat in ohe.categories_[0]],
+                index=app_train_encoded.index,
+            )
+            test_ohe = pd.DataFrame(
+                ohe.transform(app_test_encoded[[col]]),
+                columns=[f"{col}_{cat}" for cat in ohe.categories_[0]],
+                index=app_test_encoded.index,
+            )
+
+            app_train_encoded = pd.concat([app_train_encoded.drop(columns=[col]), train_ohe], axis=1)
+            app_test_encoded = pd.concat([app_test_encoded.drop(columns=[col]), test_ohe], axis=1)
+
+    print(f""""Données avant alignement :
+    Train shape : {app_train_encoded.shape}
+    Test shape : {app_test_encoded.shape}
+    """)
+
+    # Alignement des colonnes train/test (important pour éviter les erreurs de dimensions)
+    # Extraire la colonne cible avant alignement
+    train_labels = app_train_encoded["TARGET"]
+    app_train_encoded = app_train_encoded.drop(columns=["TARGET"])
+
+    # Aligner les colonnes (garder uniquement les colonnes communes)
+    app_train_encoded, app_test_encoded = app_train_encoded.align(app_test_encoded, join="inner", axis=1)
+
+    # Restaurer la cible
+    app_train_encoded["TARGET"] = train_labels
+
+    print(f""""Données alignées :
+    Train shape : {app_train_encoded.shape}
+    Test shape : {app_test_encoded.shape}
+    """)
+    return (app_train_encoded,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""### Correlation""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    - Objectif : Identifier les relations entre les caractéristiques et la cible (TARGET) en calculant le coefficient de corrélation de Pearson.
+
+    - Méthode : Utiliser la méthode .corr sur le DataFrame pour obtenir les corrélations entre chaque variable et la cible.
+
+    - Interprétation des valeurs absolues :
+
+    0.00–0.19 : Très faible
+
+    0.20–0.39 : Faible
+
+    0.40–0.59 : Modérée
+
+    0.60–0.79 : Forte
+
+    0.80–1.00 : Très forte
+
+    Limitation : Le coefficient de corrélation ne représente pas toujours parfaitement la pertinence d'une caractéristique, mais il donne une première indication des relations possibles dans les données.
+    """
+    )
+    return
+
+
+@app.cell
+def _(app_train_df_encoded):
+    app_train_df_encoded["DAYS_BIRTH"].head()
+    return
+
+
+@app.cell
+def _(app_train_encoded):
+    # Trouver les corrélations avec la cible et trier
+    correlations = app_train_encoded.corr()["TARGET"].sort_values().round(2)
+
+    # Afficher les corrélations
+    print("Corrélations les plus positives :\n", correlations.tail(10))
+    print("\nCorrélations les plus négatives :\n", correlations.head(10))
+    return (correlations,)
+
+
+@app.cell
+def _(correlations, plt):
+    plt.figure(figsize=(8, 5))
+
+    # stem function
+    plt.stem(correlations.drop("TARGET").values)
+    plt.ylim(-0.3, 0.3)
+
+    # Ajouter des titres et des labels
+    plt.title("Corrélation des variables avec la cible (Zoom)")
+    plt.xlabel("Variables")
+    plt.ylabel("Valeurs de corrélation")
+
+    # Afficher le graphique
+    plt.tight_layout()
+    plt.show()
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    - Les variables **EXT_SOURCE_2, et EXT_SOURCE_3** représentent des scores normalisés provenant de sources de données externes.
+
+    Ces scores sont utilisés pour évaluer la solvabilité ou le risque d'un client à partir d'informations externes, comme des données de bureau de crédit ou d'autres bases de données financières.
+
+    Ces scores sont souvent agrégés ou calculés à partir de plusieurs facteurs externes et fournissent une indication globale du risque.
+
+    - Corrélation significative : La variable DAYS_BIRTH montre la corrélation positive la plus forte (hors TARGET, car une variable est toujours corrélée à 1 avec elle-même).
+
+    - Interprétation : DAYS_BIRTH représente l'âge du client en jours négatifs. Une corrélation positive signifie que les clients plus âgés sont moins susceptibles de faire défaut sur leur prêt (TARGET == 0).
+    """
+    )
+    return
+
+
+@app.cell
+def _(correlations):
+    # Effet de l'Âge sur le Remboursement
+    _pearson = correlations["DAYS_BIRTH"]
+
+    print(f"Coefficient de correlation entre l'âge du client et la TARGET: {_pearson:.2f}")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""- Corelation Négative : Il existe une relation linéaire négative entre l'âge du client et la cible (TARGET), indiquant que les clients plus âgés ont tendance à rembourser leurs prêts à temps plus souvent.""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Analyse de la Variable : Commençons par examiner cette variable.
+
+    Histogramme de l'Âge : Nous allons tracer un histogramme de l'âge, en utilisant l'axe des x en années pour rendre le graphique plus compréhensible.
+    """
+    )
+    return
+
+
+@app.cell
+def _(app_train_encoded, plt, sns):
+    # Tracer la distribution des âges en années
+    sns.histplot(app_train_encoded['DAYS_BIRTH'] / 365, edgecolor='k', bins=25)
+    plt.title('Âge du Client')
+    plt.xlabel('Âge (années)')
+    plt.ylabel('Nombre')
+    plt.show()
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Un simple histograme ne permet pas d'analyser le lien de la catégorie avec la cible.
+    Je vais tracer les courbes KDE en fonction de la TARGET
+
+    - Distribution d'Âge : La courbe pour target == 1 (prêts non remboursés) est plus concentrée chez les jeunes.
+
+    - Corrélation Faible : Bien que la corrélation soit faible (-0.07), l'âge est probablement utile pour les modèles de machine learning.
+
+    - Analyse par Tranche d'Âge :
+
+    - Création de Bins : Diviser l'âge en tranches de 5 ans.
+
+    - Calcul de la Moyenne : Calculer le taux moyen de défaut de paiement par tranche d'âge.
+    """
+    )
+    return
+
+
+@app.cell
+def _(app_train_encoded, plt, sns):
+    # Tracer le KDE des prêts remboursés à temps
+    sns.kdeplot(app_train_encoded.loc[app_train_encoded["TARGET"] == 0, "DAYS_BIRTH"] / 365, label="target == 0")
+
+    # Tracer le KDE des prêts non remboursés à temps
+    sns.kdeplot(app_train_encoded.loc[app_train_encoded["TARGET"] == 1, "DAYS_BIRTH"] / 365, label="target == 1")
+
+    # Étiqueter le graphique
+    plt.xlabel("Âge (années)")
+    plt.ylabel("Densité")
+    plt.title("Distribution des Âges")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""Les clients jeunes être plus souvent en défaut de remboursement de leurs prêts.""")
+    return
+
+
+@app.cell
+def _(app_train_encoded, np, pd, plt):
+    # Créer un DataFrame séparé pour les informations sur l'âge
+    age_data = app_train_encoded[["TARGET", "DAYS_BIRTH"]]
+
+    # Convertir les jours de naissance en années
+    age_data["YEARS_BIRTH"] = age_data["DAYS_BIRTH"] / 365
+
+    # Diviser les données d'âge en tranches
+    age_data["YEARS_BINNED"] = pd.cut(age_data["YEARS_BIRTH"], bins=np.linspace(20, 70, num=11))
+
+    # Grouper par tranche d'âge et calculer les moyennes
+    age_groups = age_data.groupby("YEARS_BINNED").mean()
+
+    # Tracer les tranches d'âge et la moyenne de la cible sous forme de diagramme en barres
+    plt.bar(age_groups.index.astype(str), 100 * age_groups["TARGET"])
+
+    # Étiqueter le graphique
+    plt.xticks(rotation=75)
+    plt.xlabel("Groupe d'Âge (années)")
+    plt.ylabel("Taux de Défaut de Paiement (%)")
+    plt.title("Taux de Défaut de Paiement par Groupe d'Âge")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    Le graphique ci dessus confirme que les clients jeunes 20-25 sont plus souvent en défaut de paiement de leurs crédits.
+
+    Le taux de défaut est supérieur à 10%.
+
+    Pour réduire ce risque, le client pourrait proposer une formation et accompagnement à ces clients.
+    """
+    )
     return
 
 
 @app.cell
 def _(mo):
-    mo.image("data/plots/AMT_ANNUITY.png")
+    mo.md(
+        r"""
+    **Correlation positive**
+
+    Sources Externes : Les variables EXT_SOURCE_2, et EXT_SOURCE_3.
+
+    Elles représentent un score normalisé provenant de sources de données externes, possiblement une évaluation de crédit cumulative.
+
+    Ces variables montrent les corrélations négatives les plus fortes avec la cible (TARGET).
+    """
+    )
+    return
+
+
+@app.cell
+def _(correlations):
+    # Extraire les variables EXT_SOURCE et calculer les corrélations
+    correlations[["TARGET","EXT_SOURCE_2","EXT_SOURCE_3","DAYS_BIRTH"]]
+    return
+
+
+@app.cell
+def _(app_train_encoded):
+    ext_data = app_train_encoded[["TARGET", "EXT_SOURCE_2", "EXT_SOURCE_3", "DAYS_BIRTH"]]
+    ext_data_corrs = ext_data.corr().sort_values(by="TARGET")
+    ext_data_corrs
     return
 
 
@@ -838,8 +1336,8 @@ def _(mo):
 
 
 @app.cell
-def _(app_train_df, plt):
-    target_counts = app_train_df["TARGET"].value_counts(normalize=True)
+def _(app_train_df_filtered, plt):
+    target_counts = app_train_df_filtered["TARGET"].value_counts(normalize=True)
 
     # Définir l'effet "explode": chaque valeur représente la distance de la tranche par rapport au centre
     explode = [0.05] * len(target_counts)
@@ -870,12 +1368,25 @@ def _(mo):
 
 
 @app.cell
-def _():
-    return
+def _(mo):
+    mo.md(
+        r"""
+    ### Métriques d'évaluation
+    Pour mieux répondre aux besoins de l'entreprise, nous allons créer une fonction pour calculer un "score métier". Ce score nous aidera à comprendre l'impact financier des décisions de crédit.
 
+    Il est important de noter que les erreurs de prédiction n'ont pas le même coût. Par exemple, accorder un crédit à un client à risque (faux négatif) coûte bien plus cher que refuser un crédit à un bon client (faux positif). 
+    En fait, un faux négatif coûte environ 10 fois plus qu'un faux positif.
 
-@app.cell
-def _():
+    Voici comment nous calculons le "gain" pour la société :
+
+    - Vrais positifs : Ce sont les bons clients qui rapportent de l'argent. Leur impact est positif et est noté +1.
+    - Faux positifs : Ce sont les bons clients refusés à tort. La société perd un gain potentiel, donc leur impact est noté -1.
+    - Faux négatifs : Ce sont les mauvais clients qui reçoivent un crédit par erreur. Cela entraîne une perte financière importante, notée -10.
+    - Vrais négatifs : Ces cas n'affectent pas financièrement la société et sont donc ignorés dans notre calcul.
+
+    Note : Ces coefficients de pondération pourront être ajustés en fonction des résultats observés lors de l'entraînement des modèles.
+    """
+    )
     return
 
 
