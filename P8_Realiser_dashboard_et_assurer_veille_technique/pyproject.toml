@@ -6,35 +6,17 @@ description = "Entrainer model de ML pour proposer un crédit à la consommation
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-  "evidently>=0.4.36",
-  "imbalanced-learn>=0.14.0",
-  "joblib>=1.5.2",
-  "lightgbm>=4.6.0",
-  "marimo[recommended]>=0.15.2",
-  "mlflow>=3.3.2",
-  "numpy>=2.2.6",
-  "optuna>=4.5.0",
-  "optuna-dashboard>=0.19.0",
-  "optuna-integration[mlflow]>=4.5.0",
-  "pandas>=2.3.2",
-  "plotly>=6.3.0",
-  "scikit-learn-intelex==2025.7.0",
-  "scipy>=1.16.1",
-  "seaborn>=0.13.2",
-  "shap[plots]>=0.48.0",
-  "ty>=0.0.1a20",
-  "watchdog>=6.0.0",
+    "marimo>=0.15.2",
 ]
 
 [dependency-groups]
 dev = [
   "basedpyright>=1.31.4",
-  "ipykernel>=6.30.1",
   "mypy>=1.17.1",
-  "uv-bump>=0.2.0",
   "python-lsp-ruff>=2.2.2",
   "python-lsp-server>=1.13.1",
   "pytest>=8.4.2",
+  "ty>=0.0.1a20",
 ]
 
 [tool.marimo.runtime]

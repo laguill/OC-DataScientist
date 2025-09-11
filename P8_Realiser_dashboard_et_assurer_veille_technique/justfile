@@ -29,7 +29,6 @@ check-all: lint typing
 [group('lifecycle')]
 update:
     uv sync --upgrade
-    uv run uv-bump
 
 # Ensure project virtualenv is up to date
 [group('lifecycle')]
