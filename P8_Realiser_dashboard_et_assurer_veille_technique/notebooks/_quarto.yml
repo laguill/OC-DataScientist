@@ -1,0 +1,43 @@
+project:
+  type: manuscript
+
+manuscript:
+  article: index.qmd
+
+author:
+  - name: Guillaume LAFON
+    affiliation: OpenClassrooms
+    email: guillaumelafon13@gmail.com
+date: last-modified
+repo-url: https://github.com/laguill/OC-DataScientist/
+repo-actions: [issue]
+sharing: [linkedin]
+
+format:
+  html:
+    theme:
+      light: cosmos 
+      dark: darkly
+    toc: true
+    page-layout: full
+
+    code-tools: true
+    code-fold: false
+    code-summary: "Show the code"
+  # docx: default
+  # jats: default
+
+  # (other formats)
+  pdf: default
+
+execute:
+  enabled: true
+  cache: true
+  freeze: auto
+  # daemon: 60
+  # message: false
+  # warning: false
+  # echo: true
+
+
+

@@ -25,7 +25,7 @@ author:
     affiliation: OpenClassrooms
     email: guillaumelafon13@gmail.com
 date: last-modified
-repo-url: https://github.com/laguill/
+repo-url: https://github.com/laguill/OC-DataScientist/
 repo-actions: [issue]
 sharing: [linkedin]
 
@@ -71,13 +71,13 @@ format:
 
     theme:
       light: flatly
-      dark: darkly 
+      dark: darkly
     embed-resources: false
     self_contained: false
     page-layout: full
     # output-file: LAFON_Guillaume_web-page_012025.html
-    
-#   ipynb: 
+
+#   ipynb:
 #      echo: true
 #   #   output-file: LAFON_Guillaume_notebook_012025.ipynb
 
@@ -85,5 +85,5 @@ format:
 
 render:
   - "*.qmd"
- 
+
 

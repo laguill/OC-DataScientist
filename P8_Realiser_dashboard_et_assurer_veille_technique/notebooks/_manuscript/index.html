@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Guillaume LAFON">
+<meta name="dcterms.date" content="2025-09-25">
+
+<title>Notes méthodologiques</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-b651517ce65839d647a86e2780455cfb.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-7c823468029c3b379f9b90e418026680.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+
+
+<meta name="citation_title" content="Notes méthodologiques">
+<meta name="citation_author" content="Guillaume LAFON">
+<meta name="citation_publication_date" content="2025-09-25">
+<meta name="citation_cover_date" content="2025-09-25">
+<meta name="citation_year" content="2025">
+<meta name="citation_online_date" content="2025-09-25">
+<meta name="citation_language" content="en">
+<meta name="citation_reference" content="citation_title=Advancements in natural language processing: Implications, challenges, and future directions;,citation_abstract=This research delves into the latest advancements in Natural Language Processing (NLP) and their broader implications, challenges, and future directions. With the ever-increasing volume of text data generated daily from diverse sources, extracting relevant and valuable information is becoming more complex. Conventional manual techniques for handling and examining written information are laborious and susceptible to mistakes, underscoring the necessity for effective automated alternatives. The advancements in Natural Language Processing (NLP), namely in transformer-based models and deep learning techniques, have demonstrated considerable potential in improving the precision and consistency of various NLP applications. This work presents a novel approach that combines systematic review methods with sophisticated NLP approaches to enhance the overall efficiency of NLP systems. The proposed strategy guarantees an organized and clear literature review process, resulting in more informative and contextually relevant results. The report examines NLP’s implications, problems, and opportunities, providing significant insights that are anticipated to propel improvements in NLP technology and its application in many industries.;,citation_author=undefined Supriyono;,citation_author=Aji Prasetya Wibawa;,citation_author=undefined Suyono;,citation_author=Fachrul Kurniawan;,citation_publication_date=2024;,citation_cover_date=2024;,citation_year=2024;,citation_fulltext_html_url=https://www.sciencedirect.com/science/article/pii/S2772503024000598;,citation_doi=10.1016/j.teler.2024.100173;,citation_issn=2772-5030;,citation_volume=16;,citation_journal_title=Telematics and Informatics Reports;">
+<meta name="citation_reference" content="citation_title=A Comprehensive Overview of Large Language Models;,citation_author=Humza Naveed;,citation_author=Asad Ullah Khan;,citation_author=Shi Qiu;,citation_author=Muhammad Saqib;,citation_author=Saeed Anwar;,citation_author=Muhammad Usman;,citation_author=Naveed Akhtar;,citation_author=Nick Barnes;,citation_author=Ajmal Mian;,citation_publication_date=2024;,citation_cover_date=2024;,citation_year=2024;,citation_fulltext_html_url=https://arxiv.org/abs/2307.06435;">
+<meta name="citation_reference" content="citation_title=Pretrained Models — Sentence Transformers documentation;,citation_fulltext_html_url=https://www.sbert.net/docs/sentence_transformer/pretrained_models.html;">
+<meta name="citation_reference" content="citation_title=Classifier automatiquement des biens de consommation;,citation_author=Guillaume Lafon;,citation_publication_date=2024;,citation_cover_date=2024;,citation_year=2024;,citation_fulltext_html_url=https://github.com/laguill/OC-DataScientist/blob/main/P6_Classifier_automatiquement_biens_consommation/soutenance/LAFON_Guillaume_1_notebook_pretraitement_descriptions_extraction_faisaibilite_072025.ipynb;">
+<meta name="citation_reference" content="citation_title=XLNet: Generalized Autoregressive Pretraining for Language Understanding;,citation_author=Zhilin Yang;,citation_author=Zihang Dai;,citation_author=Yiming Yang;,citation_author=Jaime Carbonell;,citation_author=Ruslan Salakhutdinov;,citation_author=Quoc V. Le;,citation_publication_date=2020;,citation_cover_date=2020;,citation_year=2020;,citation_fulltext_html_url=https://arxiv.org/abs/1906.08237;">
+<meta name="citation_reference" content="citation_title=MPNet: Masked and Permuted Pre-training for Language Understanding;,citation_author=Kaitao Song;,citation_author=Xu Tan;,citation_author=Tao Qin;,citation_author=Jianfeng Lu;,citation_author=Tie-Yan Liu;,citation_publication_date=2020;,citation_cover_date=2020;,citation_year=2020;,citation_fulltext_html_url=https://arxiv.org/abs/2004.09297;">
+<meta name="citation_reference" content="citation_title=Recent advances in text embedding: A Comprehensive Review of Top-Performing Methods on the MTEB Benchmark;,citation_author=Hongliu Cao;,citation_publication_date=2024;,citation_cover_date=2024;,citation_year=2024;,citation_fulltext_html_url=https://arxiv.org/abs/2406.01607;">
+<meta name="citation_reference" content="citation_title=Do We Need Domain-Specific Embedding Models? An Empirical Investigation;,citation_author=Yixuan Tang;,citation_author=Yi Yang;,citation_publication_date=2025;,citation_cover_date=2025;,citation_year=2025;,citation_fulltext_html_url=https://arxiv.org/abs/2409.18511;">
+<meta name="citation_reference" content="citation_title=Rethinking Hybrid Retrieval: When Small Embeddings and LLM Re-ranking Beat Bigger Models;,citation_author=Arjun Rao;,citation_author=Hanieh Alipour;,citation_author=Nick Pendar;,citation_publication_date=2025;,citation_cover_date=2025;,citation_year=2025;,citation_fulltext_html_url=https://arxiv.org/abs/2506.00049;">
+<meta name="citation_reference" content="citation_title=MiniLM: Deep Self-Attention Distillation for Task-Agnostic Compression of Pre-Trained Transformers;,citation_author=Wenhui Wang;,citation_author=Furu Wei;,citation_author=Li Dong;,citation_author=Hangbo Bao;,citation_author=Nan Yang;,citation_author=Ming Zhou;,citation_publication_date=2020;,citation_cover_date=2020;,citation_year=2020;,citation_fulltext_html_url=https://arxiv.org/abs/2002.10957;">
+</head>
+
+<body class="quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-page-right">
+      <div class="quarto-title-block"><div><h1 class="title">Notes méthodologiques</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+          </div>
+
+    
+    <div class="quarto-title-meta-container">
+      <div class="quarto-title-meta-column-start">
+            <div class="quarto-title-meta-author column-page-right">
+          <div class="quarto-title-meta-heading">Author</div>
+          <div class="quarto-title-meta-heading">Affiliation</div>
+          
+                <div class="quarto-title-meta-contents">
+            <p class="author">Guillaume LAFON </p>
+          </div>
+                <div class="quarto-title-meta-contents">
+                    <p class="affiliation">
+                        OpenClassrooms
+                      </p>
+                  </div>
+                    </div>
+        
+        <div class="quarto-title-meta column-page-right">
+
+                      
+                <div>
+            <div class="quarto-title-meta-heading">Published</div>
+            <div class="quarto-title-meta-contents">
+              <p class="date">September 25, 2025</p>
+            </div>
+          </div>
+          
+                
+              </div>
+      </div>
+      <div class="quarto-title-meta-column-end quarto-other-formats-target">
+      </div>
+    </div>
+
+
+
+    <div class="quarto-other-links-text-target">
+    </div>  </div>
+</header><div id="quarto-content" class="page-columns page-rows-contents page-layout-full toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#état-de-lart-et-benchmark-des-modèles-dembeddings-pour-la-classification-de-descriptions-de-produits-une-comparaison-des-sentence-transformers-récents-2020-2025" id="toc-état-de-lart-et-benchmark-des-modèles-dembeddings-pour-la-classification-de-descriptions-de-produits-une-comparaison-des-sentence-transformers-récents-2020-2025" class="nav-link active" data-scroll-target="#état-de-lart-et-benchmark-des-modèles-dembeddings-pour-la-classification-de-descriptions-de-produits-une-comparaison-des-sentence-transformers-récents-2020-2025">État de l’art et benchmark des modèles d’embeddings pour la classification de descriptions de produits : une comparaison des Sentence Transformers récents (2020-2025)</a>
+  <ul class="collapse">
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#dataset-retenu" id="toc-dataset-retenu" class="nav-link" data-scroll-target="#dataset-retenu">Dataset retenu</a></li>
+  <li><a href="#modèles-étudiés" id="toc-modèles-étudiés" class="nav-link" data-scroll-target="#modèles-étudiés">Modèles étudiés</a></li>
+  <li><a href="#bert-base-uncased" id="toc-bert-base-uncased" class="nav-link" data-scroll-target="#bert-base-uncased">1. BERT base uncased</a></li>
+  <li><a href="#mpnet-all-mpnet-base-v2" id="toc-mpnet-all-mpnet-base-v2" class="nav-link" data-scroll-target="#mpnet-all-mpnet-base-v2">2. MPNet (all-mpnet-base-v2)</a></li>
+  <li><a href="#minilm-all-minilm-l6-v2" id="toc-minilm-all-minilm-l6-v2" class="nav-link" data-scroll-target="#minilm-all-minilm-l6-v2">3. MiniLM / all-MiniLM-L6-v2</a></li>
+  <li><a href="#comparaison-synthétique" id="toc-comparaison-synthétique" class="nav-link" data-scroll-target="#comparaison-synthétique">4. Comparaison synthétique</a></li>
+  <li><a href="#limites-et-améliorations-possibles" id="toc-limites-et-améliorations-possibles" class="nav-link" data-scroll-target="#limites-et-améliorations-possibles">5. Limites et améliorations possibles</a></li>
+  <li><a href="#pistes-damélioration" id="toc-pistes-damélioration" class="nav-link" data-scroll-target="#pistes-damélioration">Pistes d’amélioration</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content quarto-banner-title-block column-page-right" id="quarto-document-content">
+
+
+
+
+  
+
+
+<section id="état-de-lart-et-benchmark-des-modèles-dembeddings-pour-la-classification-de-descriptions-de-produits-une-comparaison-des-sentence-transformers-récents-2020-2025" class="level2">
+<h2 class="anchored" data-anchor-id="état-de-lart-et-benchmark-des-modèles-dembeddings-pour-la-classification-de-descriptions-de-produits-une-comparaison-des-sentence-transformers-récents-2020-2025">État de l’art et benchmark des modèles d’embeddings pour la classification de descriptions de produits : une comparaison des Sentence Transformers récents (2020-2025)</h2>
+<section id="introduction" class="level3">
+<h3 class="anchored" data-anchor-id="introduction">Introduction</h3>
+<p>Les modèles d’embeddings comme BERT, MPNet et MiniLM (<span class="citation" data-cites="sbert_pretrained_models"><span>“Pretrained Models — Sentence Transformers Documentation”</span> (<a href="#ref-sbert_pretrained_models" role="doc-biblioref">n.d.</a>)</span>) ont révolutionné le traitement du texte ces 5 dernières années. Ils permettent de transformer des descriptions de produits en vecteurs numériques, utiles pour la classification automatique.</p>
+<p><strong>Objectif</strong> :</p>
+<p>État de l’art : Analyser les performances des modèles récents (2020-2025) sur des tâches de NLP, en s’appuyant sur des sources comme arXiv, SBERT, et des benchmarks reconnus.</p>
+<p><strong>Test pratique</strong> : Comparer ces modèles sur un jeu de données réel de descriptions de produits (issu du projet <span class="citation" data-cites="openclassrooms_projet6">Lafon (<a href="#ref-openclassrooms_projet6" role="doc-biblioref">2024</a>)</span>).</p>
+<p><strong>Résultats</strong> : Identifier quel modèle offre le meilleur compromis entre précision et rapidité pour une classification efficace.</p>
+<p>Cette veille vise à fournir des recommandations claires pour choisir un modèle adapté à des applications concrètes, comme un système de catégorisation automatique.</p>
+<p><span class="citation" data-cites="SUPRIYONO2024100173">Supriyono et al. (<a href="#ref-SUPRIYONO2024100173" role="doc-biblioref">2024</a>)</span> <span class="citation" data-cites="naveed2024comprehensiveoverviewlargelanguage">Naveed et al. (<a href="#ref-naveed2024comprehensiveoverviewlargelanguage" role="doc-biblioref">2024</a>)</span></p>
+</section>
+<section id="dataset-retenu" class="level3">
+<h3 class="anchored" data-anchor-id="dataset-retenu">Dataset retenu</h3>
+<p>Le dataset retenu provient du projet 6 “Classifier automatiquement des biens de consommations”. Place de Marché, une entreprise anglophone souhaite automatiser l’attribution des catégories de produits sur sa place Marketplace, une tâche actuellement réalisée manuellement par les vendeurs. Le dataset se compose de 1 fichier CSV contenant la description de 1000 produits.</p>
+<p>Les descriptions ont été prétraités suivant les bonnes pratiques de NLP (suppression des stopwords, mise en minuscule, lemmatisation , etcw).</p>
+</section>
+<section id="modèles-étudiés" class="level3">
+<h3 class="anchored" data-anchor-id="modèles-étudiés">Modèles étudiés</h3>
+<p>Nous considérons trois modèles représentatifs :</p>
+<ul>
+<li>BERT</li>
+<li>Mpnet</li>
+<li>Mini-LM</li>
+</ul>
+<hr>
+</section>
+<section id="bert-base-uncased" class="level3">
+<h3 class="anchored" data-anchor-id="bert-base-uncased">1. BERT base uncased</h3>
+<p><strong>Références clés</strong> : BERT (Bidirectional Encoder Representations from Transformers) est l’un des premiers modèles à avoir popularisé les embeddings contextuels.</p>
+<p>Il repose uniquement sur la partie encodeur de l’architecture Transformer, avec 12 couches et 768 dimensions.</p>
+<p>L’entraînement combine deux tâches : le Masked Language Modeling (MLM), où certains tokens sont masqués et prédits à partir du contexte, et le Next Sentence Prediction (NSP), bien que ce dernier soit moins utilisé aujourd’hui.</p>
+<div id="fig-MLM" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-MLM-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="results/MLM.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Concept"><img src="results/MLM.png" class="img-fluid figure-img"></a></p>
+<figcaption>Concept</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-MLM-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Concept de fonctionnement de MLM
+</figcaption>
+</figure>
+</div>
+<p><strong>Forces</strong> :</p>
+<p>Modèle robuste, encore largement utilisé comme baseline dans les comparaisons.</p>
+<p>Excellente capacité de contextualisation : le vecteur d’un mot varie selon son usage dans la phrase.</p>
+<p>Large éventail d’applications : classification, question-réponse, reconnaissance d’entités nommées.</p>
+<p><strong>Limites</strong> :</p>
+<p>Coût en calcul élevé : latence importante pour l’encodage, peu adapté aux environnements contraints.</p>
+<hr>
+</section>
+<section id="mpnet-all-mpnet-base-v2" class="level3">
+<h3 class="anchored" data-anchor-id="mpnet-all-mpnet-base-v2">2. MPNet (all-mpnet-base-v2)</h3>
+<p><strong>Rappel</strong> : XLNet comme étape intermédiaire</p>
+<p>Avant MPNet, XLNet (<span class="citation" data-cites="yang2020xlnetgeneralizedautoregressivepretraining">Yang et al. (<a href="#ref-yang2020xlnetgeneralizedautoregressivepretraining" role="doc-biblioref">2020</a>)</span>) avait été proposé pour surmonter une limite de BERT :</p>
+<p>BERT prédit les tokens masqués indépendamment les uns des autres (Masked Language Modeling).</p>
+<p>XLNet introduit le Permuted Language Modeling (PLM), où l’ordre des tokens est permuté et les prédictions s’effectuent de manière auto-régressive.</p>
+<p>Cela permet de capturer les dépendances entre tokens prédits, ce que BERT ne faisait pas.</p>
+<div id="fig-PLM" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-PLM-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="results/PLM.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Figure&nbsp;2: Concept de focntionnement de PLM"><img src="results/PLM.png" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-PLM-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Concept de focntionnement de PLM
+</figcaption>
+</figure>
+</div>
+<p><strong>Limite de XLNet</strong> : comme l’ordre des tokens est modifié, le modèle ne dispose pas toujours de la position exacte des mots dans leur séquence originale. Cela crée un décalage entre le pré-entraînement (phrases permutées) et l’utilisation réelle (phrases dans l’ordre normal).</p>
+<p><strong>Principes de MPNet</strong></p>
+<p>MPNet (Masked and Permuted Pre-training for Language Understanding) combine les avantages de BERT et XLNet :</p>
+<p>Comme BERT, il conserve la visibilité complète du contexte grâce au masquage (Masked Language Modeling).</p>
+<p>Comme XLNet, il introduit des dépendances entre tokens prédits, en les générant dans un ordre auto-régressif.</p>
+<p>En plus, MPNet ajoute un mécanisme d’input consistency : le modèle connaît la position exacte de chaque token, même ceux masqués, ce qui corrige la limite de XLNet. (<span class="citation" data-cites="song2020mpnetmaskedpermutedpretraining">Song et al. (<a href="#ref-song2020mpnetmaskedpermutedpretraining" role="doc-biblioref">2020</a>)</span>)</p>
+<div id="fig-MPNET" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-MPNET-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="results/MPNET.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3" title="Figure&nbsp;3: Concept de fonctionnement de MPNET"><img src="results/MPNET.png" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-MPNET-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Concept de fonctionnement de MPNET
+</figcaption>
+</figure>
+</div>
+<p><strong>Forces</strong></p>
+<p>Excellente précision sur les tâches de similarité sémantique et de classification fine.</p>
+<p>Combine le meilleur de BERT (vision contextuelle) et XLNet (dépendances entre prédictions).</p>
+<p>Recommandé pour les applications où la qualité des représentations est critique (retrieval, recherche sémantique, Q&amp;A).</p>
+<p><strong>Limites</strong></p>
+<p>Plus coûteux que les modèles distillés comme MiniLM.</p>
+<p>Temps d’inférence et mémoire encore relativement élevés.</p>
+<hr>
+</section>
+<section id="minilm-all-minilm-l6-v2" class="level3">
+<h3 class="anchored" data-anchor-id="minilm-all-minilm-l6-v2">3. MiniLM / all-MiniLM-L6-v2</h3>
+<p><strong>Références clés</strong> :</p>
+<p>MiniLM (<span class="citation" data-cites="wang2020minilm">Wang et al. (<a href="#ref-wang2020minilm" role="doc-biblioref">2020</a>)</span>) repose sur la distillation de connaissances : un petit modèle (student) apprend à imiter les distributions d’attention d’un modèle plus grand (teacher).</p>
+<p>La variante all-MiniLM-L6-v2 est entraînée spécifiquement pour les sentence embeddings, via un objectif contrastif sur de larges corpus.</p>
+<p><strong>Forces</strong> :</p>
+<p>Rapidité et faible coût computationnel, adapté aux applications temps réel ou aux environnements contraints.Latence très réduite, tout en conservant une précision compétitive par rapport à des modèles plus lourds.Bon choix pour le multilingue et les systèmes embarqués.</p>
+<p><strong>Limites</strong> :</p>
+<p>Légère perte de performance (5-8% en moyenne) par rapport à MPNet sur des tâches de similarité ou de classification fine.Moins adapté pour des textes longs ou des tâches nécessitant une compréhension très fine du contexte.</p>
+<hr>
+<section id="méthodologie-appliquée" class="level4">
+<h4 class="anchored" data-anchor-id="méthodologie-appliquée">Méthodologie appliquée</h4>
+</section>
+<section id="données-et-préparation" class="level4">
+<h4 class="anchored" data-anchor-id="données-et-préparation">1. Données et préparation</h4>
+<p>Un échantillon de 1 000 descriptions produits a été extrait de la base nettoyée afin de limiter les coûts de calcul tout en gardant une représentativité des catégories. Les données ont ensuite été divisées en <strong>train/test (80/20)</strong> de manière stratifiée pour préserver la distribution des classes.</p>
+<hr>
+</section>
+<section id="encodage-des-textes" class="level4">
+<h4 class="anchored" data-anchor-id="encodage-des-textes">2. Encodage des textes</h4>
+<p>Les descriptions ont été transformées en vecteurs denses à l’aide de la librairie <strong>Sentence Transformers (Hugging Face)</strong>. Trois modèles ont été comparés :</p>
+<ul>
+<li><strong>all-MiniLM-L6-v2</strong> : léger, optimisé pour la rapidité,</li>
+<li><strong>all-mpnet-base-v2</strong> : plus coûteux mais plus précis,</li>
+<li><strong>bert-base-uncased</strong> : modèle historique, utilisé comme baseline.</li>
+</ul>
+<p>Chaque encodage a été chronométré et sauvegardé afin d’assurer la reproductibilité des expériences.</p>
+<hr>
+</section>
+<section id="modélisation-supervisée" class="level4">
+<h4 class="anchored" data-anchor-id="modélisation-supervisée">3. Modélisation supervisée</h4>
+<p>Pour évaluer la qualité des embeddings, un modèle de <strong>régression logistique</strong> a été retenu comme classifieur de référence. Ce choix se justifie par :</p>
+<ul>
+<li>sa simplicité d’entraînement,</li>
+<li>sa rapidité d’exécution,</li>
+<li>sa pertinence comme baseline pour comparer différentes représentations.</li>
+</ul>
+<p>L’entraînement et l’évaluation ont été réalisés avec <strong>PyCaret</strong>, incluant une validation croisée afin de limiter le sur-apprentissage.</p>
+<hr>
+</section>
+<section id="évaluation-et-comparaison" class="level4">
+<h4 class="anchored" data-anchor-id="évaluation-et-comparaison">4. Évaluation et comparaison</h4>
+<p>Les performances ont été mesurées à l’aide des principales métriques de classification (<strong>F1-score, précision, rappel, accuracy</strong>). En parallèle, le <strong>temps d’encodage</strong> et le <strong>temps de prédiction</strong> ont été suivis afin d’intégrer une dimension d’efficacité computationnelle.</p>
+<p>Les résultats de chaque combinaison <em>embedding + classifieur</em> ont ensuite été centralisés pour comparaison.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span><em>Pour rappel</em>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Accuracy (Exactitude)</strong> : Mesure le pourcentage total de description correctement classifiées par le modèle parmi toutes les images de l’ensemble de test. Elle donne une vue d’ensemble de la performance globale du modèle.</p>
+<p><strong>Précision (Precision)</strong> : Mesure la proportion d’éléments correctement identifiés comme appartenant à une classe spécifique parmi tous ceux que le modèle a prédits comme appartenant à cette classe. Elle permet d’évaluer la capacité du modèle à éviter les faux positifs.</p>
+<p><strong>Rappel (Recall)</strong> : Mesure la proportion d’éléments appartenant réellement à une classe spécifique qui sont correctement identifiés par le modèle. Elle évalue la capacité du modèle à détecter tous les éléments pertinents pour une classe donnée.</p>
+<p><strong>F1-score</strong> : Représente la moyenne harmonique de la précision et du rappel. Il offre une mesure équilibrée de la performance du modèle, en tenant compte à la fois des faux positifs et des faux négatifs.</p>
+<p><strong>Matrice de confusion</strong> : Tableau qui détaille le nombre de prédictions correctes et incorrectes pour chaque classe. Elle permet de visualiser les erreurs du modèle et d’identifier les classes qui posent problème.</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="comparaison-synthétique" class="level3">
+<h3 class="anchored" data-anchor-id="comparaison-synthétique">4. Comparaison synthétique</h3>
+<p>Comparaison des modèles sur les données de test.</p>
+<div id="fig-embeddings-comparaison" class="quarto-layout-panel">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-embeddings-comparaison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-embeddings-comparaison" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-scatter-plot" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-scatter-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="results/fig_acc.png" class="lightbox" data-gallery="fig-embeddings-comparaison" title="Figure&nbsp;4&nbsp;(a): Compromis temps/performance en fonction des embeddings"><img src="results/fig_acc.png" class="img-fluid figure-img" data-ref-parent="fig-embeddings-comparaison"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-scatter-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Compromis temps/performance en fonction des embeddings
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-embeddings-comparaison" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-bar-plot" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-bar-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="results/fig_bar_time.png" class="lightbox" data-gallery="fig-embeddings-comparaison" title="Figure&nbsp;4&nbsp;(b): Temps de calcul en fonction des embeddings"><img src="results/fig_bar_time.png" class="img-fluid figure-img" data-ref-parent="fig-embeddings-comparaison"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-bar-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b) Temps de calcul en fonction des embeddings
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-embeddings-comparaison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Analyse des méthodes d’embeddings
+</figcaption>
+</figure>
+</div>
+<div id="fig-comparaison-confusion-matrix" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-comparaison-confusion-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="results/classification_matrix.png" class="lightbox" data-gallery="quarto-lightbox-gallery-6" title="Figure&nbsp;5: Confusion matrix en fonction de la méthode d’embedding utilisée."><img src="results/classification_matrix.png" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-comparaison-confusion-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Confusion matrix en fonction de la méthode d’embedding utilisée.
+</figcaption>
+</figure>
+</div>
+<div id="fig-comparaison-class-report" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-comparaison-class-report-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<a href="results/Class_Reports.png" class="lightbox" data-gallery="quarto-lightbox-gallery-7" title="Figure&nbsp;6: Confusion matrix en fonction de la méthode d’embedding utilisée."><img src="results/Class_Reports.png" class="img-fluid figure-img"></a>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-comparaison-class-report-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Confusion matrix en fonction de la méthode d’embedding utilisée.
+</figcaption>
+</figure>
+</div>
+<p>Les résultats de cette étude comparative montrent des différences significatives entre les modèles d’embeddings testés, tant en performance qu’en efficacité computationnelle. Parmi les trois modèles évalués, <strong>all-MiniLM-L6-v2</strong> apparaît comme le meilleur compromis.</p>
+<p>Il combine une performance stable sur l’ensemble des catégories (macro F1-score 0.89, micro F1-score 0.91) avec un temps de calcul réduit (~100 secondes pour le dataset testé). Ce modèle maintient particulièrement bien ses performances sur les catégories sous-représentées, ce qui se reflète dans son macro F1-score supérieur aux autres modèles.</p>
+<p>En comparaison, bert-base-uncased atteint un micro F1-score légèrement supérieur (0.92), mais son coût computationnel est jusqu’à cinq fois plus élevé, sans gain significatif sur les catégories critiques telles que baby care ou beauty &amp; personal care. Quant à all-mpnet-base-v2, il affiche une performance moyenne solide (macro F1-score 0.87) et se distingue sur certaines catégories spécifiques, comme home decor &amp; festive needs, où il obtient un F1-score parfait.</p>
+<p>Ces résultats suggèrent que all-MiniLM-L6-v2 est le choix optimal pour un équilibre entre rapidité et précision, tandis que bert-base-uncased pourrait être envisagé lorsque la performance prime sur les contraintes de temps, bien que le gain marginal ne justifie pas toujours le surcoût computationnel.</p>
+</section>
+<section id="limites-et-améliorations-possibles" class="level3">
+<h3 class="anchored" data-anchor-id="limites-et-améliorations-possibles">5. Limites et améliorations possibles</h3>
+<p>La méthodologie présentée comporte plusieurs limites :</p>
+<ul>
+<li><strong>Taille du jeu de données</strong> : l’échantillon utilisé (1 000 descriptions) permet de réduire les temps de calcul, mais il reste restreint. Les résultats obtenus ne sont donc pas nécessairement généralisables à un corpus de plus grande ampleur.</li>
+<li><strong>Modèle de classification simple</strong> : l’utilisation d’une régression logistique constitue un bon point de départ pour comparer des embeddings, mais elle ne reflète pas le potentiel maximal des représentations, qui pourraient mieux s’exprimer avec des modèles plus complexes (p.&nbsp;ex. réseaux de neurones légers ou gradient boosting).</li>
+<li><strong>Diversité des données</strong> : les descriptions analysées appartiennent à un domaine particulier (produits). Les performances des modèles pourraient varier sur d’autres types de textes (avis clients, articles techniques, etc.).</li>
+</ul>
+</section>
+<section id="pistes-damélioration" class="level3">
+<h3 class="anchored" data-anchor-id="pistes-damélioration">Pistes d’amélioration</h3>
+<ul>
+<li>Étendre l’expérimentation à un corpus plus large afin de vérifier la robustesse des résultats.</li>
+<li>Évaluer d’autres classifieurs supervisés (Random Forest, XGBoost, MLP) pour tester la sensibilité des embeddings aux choix de modèles.</li>
+<li>Explorer des approches multilingues ou spécialisées par domaine (ex. modèles d’embeddings entraînés sur du texte produit/retail).</li>
+</ul>
+<hr>
+<p><strong>En conclusion</strong> :</p>
+<ul>
+<li><p><strong>Pour une application nécessitant rapidité et légèreté</strong> : all-MiniLM-L6-v2 est le meilleur choix pour des utilisation limitées en puissance de calcul.</p></li>
+<li><p><strong>Pour une application critique en précision</strong> : all-mpnet-base-v2 est recommandé, avec des benchmarks solides en retrieval et classification.</p></li>
+<li><p><strong>Pour du fine-tuning sur un domaine spécifique</strong> : BERT base uncased reste une référence, avec une abondance de travaux récents confirmant sa robustesse après adaptation.</p></li>
+</ul>
+<!-- -->
+
+
+</section>
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-openclassrooms_projet6" class="csl-entry" role="listitem">
+Lafon, Guillaume. 2024. <span>“Classifier Automatiquement Des Biens de Consommation.”</span> <a href="https://github.com/laguill/OC-DataScientist/blob/main/P6_Classifier_automatiquement_biens_consommation/soutenance/LAFON_Guillaume_1_notebook_pretraitement_descriptions_extraction_faisaibilite_072025.ipynb">https://github.com/laguill/OC-DataScientist/blob/main/P6_Classifier_automatiquement_biens_consommation/soutenance/LAFON_Guillaume_1_notebook_pretraitement_descriptions_extraction_faisaibilite_072025.ipynb</a>.
+</div>
+<div id="ref-naveed2024comprehensiveoverviewlargelanguage" class="csl-entry" role="listitem">
+Naveed, Humza, Asad Ullah Khan, Shi Qiu, Muhammad Saqib, Saeed Anwar, Muhammad Usman, Naveed Akhtar, Nick Barnes, and Ajmal Mian. 2024. <span>“A Comprehensive Overview of Large Language Models.”</span> <a href="https://arxiv.org/abs/2307.06435">https://arxiv.org/abs/2307.06435</a>.
+</div>
+<div id="ref-sbert_pretrained_models" class="csl-entry" role="listitem">
+<span>“Pretrained Models — Sentence Transformers Documentation.”</span> n.d. <a href="https://www.sbert.net/docs/sentence_transformer/pretrained_models.html">https://www.sbert.net/docs/sentence_transformer/pretrained_models.html</a>.
+</div>
+<div id="ref-song2020mpnetmaskedpermutedpretraining" class="csl-entry" role="listitem">
+Song, Kaitao, Xu Tan, Tao Qin, Jianfeng Lu, and Tie-Yan Liu. 2020. <span>“MPNet: Masked and Permuted Pre-Training for Language Understanding.”</span> <a href="https://arxiv.org/abs/2004.09297">https://arxiv.org/abs/2004.09297</a>.
+</div>
+<div id="ref-SUPRIYONO2024100173" class="csl-entry" role="listitem">
+Supriyono, Aji Prasetya Wibawa, Suyono, and Fachrul Kurniawan. 2024. <span>“Advancements in Natural Language Processing: Implications, Challenges, and Future Directions.”</span> <em>Telematics and Informatics Reports</em> 16: 100173. <a href="https://doi.org/10.1016/j.teler.2024.100173">https://doi.org/10.1016/j.teler.2024.100173</a>.
+</div>
+<div id="ref-wang2020minilm" class="csl-entry" role="listitem">
+Wang, Wenhui, Furu Wei, Li Dong, Hangbo Bao, Nan Yang, and Ming Zhou. 2020. <span>“MiniLM: Deep Self-Attention Distillation for Task-Agnostic Compression of Pre-Trained Transformers.”</span> <a href="https://arxiv.org/abs/2002.10957">https://arxiv.org/abs/2002.10957</a>.
+</div>
+<div id="ref-yang2020xlnetgeneralizedautoregressivepretraining" class="csl-entry" role="listitem">
+Yang, Zhilin, Zihang Dai, Yiming Yang, Jaime Carbonell, Ruslan Salakhutdinov, and Quoc V. Le. 2020. <span>“XLNet: Generalized Autoregressive Pretraining for Language Understanding.”</span> <a href="https://arxiv.org/abs/1906.08237">https://arxiv.org/abs/1906.08237</a>.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> Notes méthodologiques</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="an">authors:</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">  - name: Guillaume LAFON</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">    affiliation: OpenClassrooms</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">    roles: writing</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span><span class="co"> html</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="an">image:</span><span class="co"> results/*</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="an">filters:</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">  - marimo-team/marimo</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="an">title-block-banner:</span><span class="co"> true</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="an">bibliography:</span><span class="co"> references.bib</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">## État de l’art et benchmark des modèles d’embeddings pour la classification de descriptions de produits : une comparaison des Sentence Transformers récents (2020-2025)</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">### Introduction</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>Les modèles d’embeddings comme BERT, MPNet et MiniLM (@sbert_pretrained_models) ont révolutionné le traitement du texte ces 5 dernières années. Ils permettent de transformer des descriptions de produits en vecteurs numériques, utiles pour la classification automatique.</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>**Objectif** :</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>État de l’art : Analyser les performances des modèles récents (2020-2025) sur des tâches de NLP, en s’appuyant sur des sources comme arXiv, SBERT, et des benchmarks reconnus.</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>**Test pratique** : Comparer ces modèles sur un jeu de données réel de descriptions de produits (issu du projet @openclassrooms_projet6).</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>**Résultats** : Identifier quel modèle offre le meilleur compromis entre précision et rapidité pour une classification efficace.</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>Cette veille vise à fournir des recommandations claires pour choisir un modèle adapté à des applications concrètes, comme un système de catégorisation automatique.</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>@SUPRIYONO2024100173</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>@naveed2024comprehensiveoverviewlargelanguage</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="fu">### Dataset retenu</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>Le dataset retenu provient du projet 6 "Classifier automatiquement des biens de consommations". Place de Marché, une entreprise anglophone souhaite automatiser l'attribution des catégories de produits sur sa place Marketplace, une tâche actuellement réalisée manuellement par les vendeurs. Le dataset se compose de 1 fichier CSV contenant la description de 1000 produits.</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>Les descriptions ont été prétraités suivant les bonnes pratiques de NLP (suppression des stopwords, mise en minuscule, lemmatisation , etcw).</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="fu">### Modèles étudiés</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>Nous considérons trois modèles représentatifs :</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BERT</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Mpnet</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Mini-LM</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="fu">### 1. BERT base uncased</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>**Références clés** :</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>BERT (Bidirectional Encoder Representations from Transformers) est l’un des premiers modèles à avoir popularisé les embeddings contextuels.</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>Il repose uniquement sur la partie encodeur de l’architecture Transformer, avec 12 couches et 768 dimensions.</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>L’entraînement combine deux tâches : le Masked Language Modeling (MLM), où certains tokens sont masqués et prédits à partir du contexte, et le Next Sentence Prediction (NSP), bien que ce dernier soit moins utilisé aujourd’hui.</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>::: {#fig-MLM}</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a><span class="al">![Concept](results/MLM.png)</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>Concept de fonctionnement de MLM</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>**Forces** :</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>Modèle robuste, encore largement utilisé comme baseline dans les comparaisons.</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>Excellente capacité de contextualisation : le vecteur d’un mot varie selon son usage dans la phrase.</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>Large éventail d’applications : classification, question-réponse, reconnaissance d’entités nommées.</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>**Limites** :</span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>Coût en calcul élevé : latence importante pour l’encodage, peu adapté aux environnements contraints.</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a><span class="fu">### 2. MPNet (all-mpnet-base-v2)</span></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a>**Rappel** : XLNet comme étape intermédiaire</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>Avant MPNet, XLNet (@yang2020xlnetgeneralizedautoregressivepretraining) avait été proposé pour surmonter une limite de BERT :</span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a>BERT prédit les tokens masqués indépendamment les uns des autres (Masked Language Modeling).</span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>XLNet introduit le Permuted Language Modeling (PLM), où l’ordre des tokens est permuté et les prédictions s’effectuent de manière auto-régressive.</span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>Cela permet de capturer les dépendances entre tokens prédits, ce que BERT ne faisait pas.</span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>::: {#fig-PLM}</span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a><span class="al">![](results/PLM.png)</span></span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a>Concept de focntionnement de PLM</span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a>**Limite de XLNet** : comme l’ordre des tokens est modifié, le modèle ne dispose pas toujours de la position exacte des mots dans leur séquence originale. Cela crée un décalage entre le pré-entraînement (phrases permutées) et l’utilisation réelle (phrases dans l’ordre normal).</span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a>**Principes de MPNet**</span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a>MPNet (Masked and Permuted Pre-training for Language Understanding) combine les avantages de BERT et XLNet :</span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a>Comme BERT, il conserve la visibilité complète du contexte grâce au masquage (Masked Language Modeling).</span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a>Comme XLNet, il introduit des dépendances entre tokens prédits, en les générant dans un ordre auto-régressif.</span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a>En plus, MPNet ajoute un mécanisme d’input consistency : le modèle connaît la position exacte de chaque token, même ceux masqués, ce qui corrige la limite de XLNet. (@song2020mpnetmaskedpermutedpretraining)</span>
+<span id="cb1-111"><a href="#cb1-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-112"><a href="#cb1-112" aria-hidden="true" tabindex="-1"></a>::: {#fig-MPNET}</span>
+<span id="cb1-113"><a href="#cb1-113" aria-hidden="true" tabindex="-1"></a><span class="al">![](results/MPNET.png)</span></span>
+<span id="cb1-114"><a href="#cb1-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-115"><a href="#cb1-115" aria-hidden="true" tabindex="-1"></a>Concept de fonctionnement de MPNET</span>
+<span id="cb1-116"><a href="#cb1-116" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a>**Forces**</span>
+<span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a>Excellente précision sur les tâches de similarité sémantique et de classification fine.</span>
+<span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a>Combine le meilleur de BERT (vision contextuelle) et XLNet (dépendances entre prédictions).</span>
+<span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a>Recommandé pour les applications où la qualité des représentations est critique (retrieval, recherche sémantique, Q&amp;A).</span>
+<span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a>**Limites**</span>
+<span id="cb1-127"><a href="#cb1-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-128"><a href="#cb1-128" aria-hidden="true" tabindex="-1"></a>Plus coûteux que les modèles distillés comme MiniLM.</span>
+<span id="cb1-129"><a href="#cb1-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a>Temps d’inférence et mémoire encore relativement élevés.</span>
+<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-132"><a href="#cb1-132" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-134"><a href="#cb1-134" aria-hidden="true" tabindex="-1"></a><span class="fu">### 3. MiniLM / all-MiniLM-L6-v2</span></span>
+<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-136"><a href="#cb1-136" aria-hidden="true" tabindex="-1"></a>**Références clés** :</span>
+<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a>MiniLM (@wang2020minilm) repose sur la distillation de connaissances : un petit modèle (student) apprend à imiter les distributions d’attention d’un modèle plus grand (teacher).</span>
+<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a>La variante all-MiniLM-L6-v2 est entraînée spécifiquement pour les sentence embeddings, via un objectif contrastif sur de larges corpus.</span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a>**Forces** :</span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a>Rapidité et faible coût computationnel, adapté aux applications temps réel ou aux environnements contraints.Latence très réduite, tout en conservant une précision compétitive par rapport à des modèles plus lourds.Bon choix pour le multilingue et les systèmes embarqués.</span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a>**Limites** :</span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a>Légère perte de performance (5-8% en moyenne) par rapport à MPNet sur des tâches de similarité ou de classification fine.Moins adapté pour des textes longs ou des tâches nécessitant une compréhension très fine du contexte.</span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Méthodologie appliquée</span></span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a><span class="fu">#### 1. Données et préparation</span></span>
+<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a>Un échantillon de 1 000 descriptions produits a été extrait de la base nettoyée afin de limiter les coûts de calcul tout en gardant une représentativité des catégories.</span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a>Les données ont ensuite été divisées en **train/test (80/20)** de manière stratifiée pour préserver la distribution des classes.</span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a><span class="fu">#### 2. Encodage des textes</span></span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a>Les descriptions ont été transformées en vecteurs denses à l’aide de la librairie **Sentence Transformers (Hugging Face)**.</span>
+<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a>Trois modèles ont été comparés :</span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**all-MiniLM-L6-v2** : léger, optimisé pour la rapidité,</span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**all-mpnet-base-v2** : plus coûteux mais plus précis,</span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**bert-base-uncased** : modèle historique, utilisé comme baseline.</span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a>Chaque encodage a été chronométré et sauvegardé afin d’assurer la reproductibilité des expériences.</span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a><span class="fu">#### 3. Modélisation supervisée</span></span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a>Pour évaluer la qualité des embeddings, un modèle de **régression logistique** a été retenu comme classifieur de référence.</span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>Ce choix se justifie par :</span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>sa simplicité d’entraînement,</span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>sa rapidité d’exécution,</span>
+<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>sa pertinence comme baseline pour comparer différentes représentations.</span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a>L’entraînement et l’évaluation ont été réalisés avec **PyCaret**, incluant une validation croisée afin de limiter le sur-apprentissage.</span>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a><span class="fu">#### 4. Évaluation et comparaison</span></span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a>Les performances ont été mesurées à l’aide des principales métriques de classification (**F1-score, précision, rappel, accuracy**).</span>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a>En parallèle, le **temps d’encodage** et le **temps de prédiction** ont été suivis afin d’intégrer une dimension d’efficacité computationnelle.</span>
+<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a>Les résultats de chaque combinaison *embedding + classifieur* ont ensuite été centralisés pour comparaison.</span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a><span class="fu">## *Pour rappel*</span></span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a>**Accuracy (Exactitude)** :</span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a>Mesure le pourcentage total de description correctement classifiées par le modèle parmi toutes les images de l’ensemble de test. Elle donne une vue d’ensemble de la performance globale du modèle.</span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a>**Précision (Precision)** :</span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a>Mesure la proportion d’éléments correctement identifiés comme appartenant à une classe spécifique parmi tous ceux que le modèle a prédits comme appartenant à cette classe. Elle permet d’évaluer la capacité du modèle à éviter les faux positifs.</span>
+<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a>**Rappel (Recall)** :</span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a>Mesure la proportion d’éléments appartenant réellement à une classe spécifique qui sont correctement identifiés par le modèle. Elle évalue la capacité du modèle à détecter tous les éléments pertinents pour une classe donnée.</span>
+<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a>**F1-score** :</span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a>Représente la moyenne harmonique de la précision et du rappel. Il offre une mesure équilibrée de la performance du modèle, en tenant compte à la fois des faux positifs et des faux négatifs.</span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a>**Matrice de confusion** :</span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a>Tableau qui détaille le nombre de prédictions correctes et incorrectes pour chaque classe. Elle permet de visualiser les erreurs du modèle et d’identifier les classes qui posent problème.</span>
+<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4. Comparaison synthétique</span></span>
+<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a>Comparaison des modèles sur les données de test.</span>
+<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a>::: {#fig-embeddings-comparaison layout-ncol=2}</span>
+<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a><span class="al">![Compromis temps/performance en fonction des embeddings](results/fig_acc.png)</span>{#fig-scatter-plot}</span>
+<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a><span class="al">![Temps de calcul en fonction des embeddings](results/fig_bar_time.png)</span>{#fig-bar-plot}</span>
+<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a>Analyse des méthodes d'embeddings</span>
+<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a>::: {#fig-comparaison-confusion-matrix}</span>
+<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a><span class="al">![](results/classification_matrix.png)</span></span>
+<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a>Confusion matrix en fonction de la méthode d'embedding utilisée.</span>
+<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a>::: {#fig-comparaison-class-report}</span>
+<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a><span class="al">![](results/Class_Reports.png)</span></span>
+<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a>Confusion matrix en fonction de la méthode d'embedding utilisée.</span>
+<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-247"><a href="#cb1-247" aria-hidden="true" tabindex="-1"></a>Les résultats de cette étude comparative montrent des différences significatives entre les modèles d’embeddings testés, tant en performance qu’en efficacité computationnelle. Parmi les trois modèles évalués, **all-MiniLM-L6-v2** apparaît comme le meilleur compromis. </span>
+<span id="cb1-248"><a href="#cb1-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-249"><a href="#cb1-249" aria-hidden="true" tabindex="-1"></a>Il combine une performance stable sur l’ensemble des catégories (macro F1-score 0.89, micro F1-score 0.91) avec un temps de calcul réduit (~100 secondes pour le dataset testé). Ce modèle maintient particulièrement bien ses performances sur les catégories sous-représentées, ce qui se reflète dans son macro F1-score supérieur aux autres modèles.</span>
+<span id="cb1-250"><a href="#cb1-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-251"><a href="#cb1-251" aria-hidden="true" tabindex="-1"></a>En comparaison, bert-base-uncased atteint un micro F1-score légèrement supérieur (0.92), mais son coût computationnel est jusqu’à cinq fois plus élevé, sans gain significatif sur les catégories critiques telles que baby care ou beauty &amp; personal care. Quant à all-mpnet-base-v2, il affiche une performance moyenne solide (macro F1-score 0.87) et se distingue sur certaines catégories spécifiques, comme home decor &amp; festive needs, où il obtient un F1-score parfait.</span>
+<span id="cb1-252"><a href="#cb1-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a>Ces résultats suggèrent que all-MiniLM-L6-v2 est le choix optimal pour un équilibre entre rapidité et précision, tandis que bert-base-uncased pourrait être envisagé lorsque la performance prime sur les contraintes de temps, bien que le gain marginal ne justifie pas toujours le surcoût computationnel.</span>
+<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5. Limites et améliorations possibles</span></span>
+<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a>La méthodologie présentée comporte plusieurs limites :</span>
+<span id="cb1-258"><a href="#cb1-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-259"><a href="#cb1-259" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Taille du jeu de données** : l’échantillon utilisé (1 000 descriptions) permet de réduire les temps de calcul, mais il reste restreint. Les résultats obtenus ne sont donc pas nécessairement généralisables à un corpus de plus grande ampleur.</span>
+<span id="cb1-260"><a href="#cb1-260" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Modèle de classification simple** : l’utilisation d’une régression logistique constitue un bon point de départ pour comparer des embeddings, mais elle ne reflète pas le potentiel maximal des représentations, qui pourraient mieux s’exprimer avec des modèles plus complexes (p. ex. réseaux de neurones légers ou gradient boosting).</span>
+<span id="cb1-261"><a href="#cb1-261" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Diversité des données** : les descriptions analysées appartiennent à un domaine particulier (produits). Les performances des modèles pourraient varier sur d’autres types de textes (avis clients, articles techniques, etc.).</span>
+<span id="cb1-262"><a href="#cb1-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-263"><a href="#cb1-263" aria-hidden="true" tabindex="-1"></a><span class="fu">### Pistes d’amélioration</span></span>
+<span id="cb1-264"><a href="#cb1-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-265"><a href="#cb1-265" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Étendre l’expérimentation à un corpus plus large afin de vérifier la robustesse des résultats.</span>
+<span id="cb1-266"><a href="#cb1-266" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Évaluer d’autres classifieurs supervisés (Random Forest, XGBoost, MLP) pour tester la sensibilité des embeddings aux choix de modèles.</span>
+<span id="cb1-267"><a href="#cb1-267" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Explorer des approches multilingues ou spécialisées par domaine (ex. modèles d’embeddings entraînés sur du texte produit/retail).</span>
+<span id="cb1-268"><a href="#cb1-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-269"><a href="#cb1-269" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb1-270"><a href="#cb1-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-271"><a href="#cb1-271" aria-hidden="true" tabindex="-1"></a>**En conclusion** : </span>
+<span id="cb1-272"><a href="#cb1-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-273"><a href="#cb1-273" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Pour une application nécessitant rapidité et légèreté** : all-MiniLM-L6-v2 est le meilleur choix pour des utilisation limitées en puissance de calcul.</span>
+<span id="cb1-274"><a href="#cb1-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-275"><a href="#cb1-275" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Pour une application critique en précision** : all-mpnet-base-v2 est recommandé, avec des benchmarks solides en retrieval et classification.</span>
+<span id="cb1-276"><a href="#cb1-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-277"><a href="#cb1-277" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Pour du fine-tuning sur un domaine spécifique** : BERT base uncased reste une référence, avec une abondance de travaux récents confirmant sa robustesse après adaptation.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+</body></html>

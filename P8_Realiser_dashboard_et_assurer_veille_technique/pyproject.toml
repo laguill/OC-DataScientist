@@ -1,12 +1,20 @@
 [project]
 authors = [{ name = "laguill", email = "guillaumelafon13@gmail.com" }]
-name = "P7_-Implementer_model_scoring"
+name = "P8_Realiser_dashboard_et_assurer_veille_technique"
 version = "0.1.0"
 description = "Entrainer model de ML pour proposer un crédit à la consommation"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.11,<3.12"
 dependencies = [
+    "datasets>=4.0.0",
+    "kaleido>=1.1.0",
     "marimo>=0.15.2",
+    "numpy>=1.26.4",
+    "pandas>=2.1.4",
+    "pycaret>=3.3.2",
+    "scikit-learn>=1.4.2",
+    "seaborn>=0.13.2",
+    "sentence-transformers>=5.1.0",
 ]
 
 [dependency-groups]

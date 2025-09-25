@@ -1,11 +1,7 @@
 import marimo
 
 __generated_with = "0.14.10"
-app = marimo.App(
-    width="medium",
-    app_title="P6 prétraitement descriptions",
-    auto_download=["html"],
-)
+app = marimo.App(width="medium", app_title="P6 prétraitement descriptions")
 
 
 @app.cell
@@ -148,6 +144,7 @@ def _():
 
     # Load language model
     nlp = spacy.load("en_core_web_sm")
+    nltk.download('stopwords')
 
     # Word2Vec
     # tensorflow
@@ -189,7 +186,7 @@ def _():
     from tf_keras.preprocessing.text import Tokenizer
     from transformers import AutoTokenizer, TFAutoModel
 
-    sns.set_theme()
+    sns.set_theme(style="white", palette="Set2")
 
     import re
 

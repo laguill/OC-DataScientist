@@ -1,0 +1,4 @@
+Model,Accuracy,AUC,Recall,Prec.,F1,Kappa,MCC,model_name,embedding_model,saved_path,embedding_time_sec
+Logistic Regression,0.91,0.9891,0.91,0.9101,0.9091,0.895,0.8953,Pipeline,all-MiniLM-L6-v2,models/all-MiniLM-L6-v2,68.52928471565247
+Logistic Regression,0.9,0.9919,0.9,0.9023,0.8989,0.8833,0.884,Pipeline,all-mpnet-base-v2,models/all-mpnet-base-v2,512.1054172515869
+Logistic Regression,0.925,0.985,0.925,0.9273,0.9249,0.9125,0.9129,Pipeline,bert-base-uncased,models/bert-base-uncased,542.1736347675323
