@@ -4,27 +4,32 @@ name = "P8_Realiser_dashboard_et_assurer_veille_technique"
 version = "0.1.0"
 description = "Entrainer model de ML pour proposer un crédit à la consommation"
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = "==3.12.*"
 dependencies = [
-    "datasets>=4.0.0",
+    "ipython>=9.6.0",
     "kaleido>=1.1.0",
-    "marimo>=0.15.2",
     "numpy>=1.26.4",
     "pandas>=2.1.4",
-    "pycaret>=3.3.2",
+    "plotly>=6.3.1",
+    "pyarrow>=21.0.0",
     "scikit-learn>=1.4.2",
     "seaborn>=0.13.2",
     "sentence-transformers>=5.1.0",
+    "shap>=0.44.1",
+    "yellowbrick>=1.5",
 ]
 
 [dependency-groups]
 dev = [
   "basedpyright>=1.31.4",
   "mypy>=1.17.1",
+  "marimo[mcp]>=0.15.2",
   "python-lsp-ruff>=2.2.2",
   "python-lsp-server>=1.13.1",
   "pytest>=8.4.2",
   "ty>=0.0.1a20",
+  "watchdog>=6.0.0",
+  "nbformat>=5.10.4",
 ]
 
 [tool.marimo.runtime]

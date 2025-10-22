@@ -1,0 +1,2 @@
+model_name,accuracy,f1_score
+all-MiniLM-L6-v2,0.9365079365079365,0.9365060674640182

@@ -1,5 +1,6 @@
 project:
   type: manuscript
+  output-dir: ../soutenance
 
 manuscript:
   article: index.qmd
@@ -20,6 +21,7 @@ format:
       dark: darkly
     toc: true
     page-layout: full
+    lang: fr
 
     code-tools: true
     code-fold: false
@@ -28,7 +30,16 @@ format:
   # jats: default
 
   # (other formats)
-  pdf: default
+  pdf: 
+    toc: true
+    number-sections: true
+    colorlinks: true
+    cap-location: bottom
+    lang: fr
+    bibliography: references.bib
+    biblio-title: "References"
+    cite-method: biblatex
+
 
 execute:
   enabled: true
