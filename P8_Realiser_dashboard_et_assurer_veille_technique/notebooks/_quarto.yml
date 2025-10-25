@@ -17,11 +17,12 @@ sharing: [linkedin]
 format:
   html:
     theme:
-      light: cosmos 
+      light: cosmos
       dark: darkly
     toc: true
     page-layout: full
     lang: fr
+    embed-resources: true
 
     code-tools: true
     code-fold: false
@@ -30,7 +31,7 @@ format:
   # jats: default
 
   # (other formats)
-  pdf: 
+  pdf:
     toc: true
     number-sections: true
     colorlinks: true
